@@ -1,0 +1,257 @@
+import { useState } from 'react'
+import { format } from 'date-fns'
+import type { ExpenseWithUser } from '@/types'
+import { useAuthStore } from '@/store'
+import { expensesService, budgetsService } from '@/services'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { useToast } from '@/hooks/use-toast'
+import { Pencil, Trash2, Receipt, User, DollarSign, Calendar, Split } from 'lucide-react'
+import { DEFAULT_CATEGORIES } from '@/types'
+
+interface ExpenseDetailDialogProps {
+  expense: ExpenseWithUser
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onExpenseUpdated?: () => void
+  onExpenseDeleted?: () => void
+}
+
+export const ExpenseDetailDialog = ({
+  expense,
+  open,
+  onOpenChange,
+  onExpenseDeleted
+}: ExpenseDetailDialogProps) => {
+  const session = useAuthStore((state) => state.session)
+  const { toast } = useToast()
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const canEdit =
+    session?.profile.permission_tier === 'manager' ||
+    expense.created_by === session?.user.id
+
+  const canDelete =
+    session?.profile.permission_tier === 'manager' ||
+    expense.created_by === session?.user.id
+
+  const getCategoryEmoji = (categoryName: string) => {
+    const category = DEFAULT_CATEGORIES.find((cat) => cat.name === categoryName)
+    return category?.emoji || '📦'
+  }
+
+  const getSplitText = () => {
+    if (expense.split_type === 'fifty_fifty') {
+      return '50/50 Split'
+    } else if (expense.split_type === 'single_payer') {
+      return '100% by one partner'
+    } else if (expense.split_type === 'custom') {
+      return `${expense.split_percentage_user1}% / ${expense.split_percentage_user2}%`
+    } else if (expense.split_type === 'proportional') {
+      return 'Proportional to income'
+    }
+    return 'Split'
+  }
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true)
+
+      if (!session?.couple?.id) {
+        throw new Error('No active session')
+      }
+
+      // Decrement budget spending
+      await budgetsService.decrementBudgetSpending(
+        session.couple.id,
+        expense.category,
+        Number(expense.amount)
+      )
+
+      // Delete expense
+      await expensesService.deleteExpense(expense.id)
+
+      toast({
+        title: 'Expense deleted',
+        description: 'The expense has been removed'
+      })
+
+      setDeleteDialogOpen(false)
+      onExpenseDeleted?.()
+    } catch (err: any) {
+      console.error('Delete expense error:', err)
+      toast({
+        title: 'Failed to delete',
+        description: err.message || 'Please try again',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <span className="text-3xl">{getCategoryEmoji(expense.category)}</span>
+              <span>{expense.category}</span>
+            </DialogTitle>
+            <DialogDescription>Expense details</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Amount */}
+            <div className="flex items-center justify-between p-4 bg-gradient-primary rounded-lg">
+              <div className="flex items-center gap-2 text-white/80">
+                <DollarSign className="h-5 w-5" />
+                <span className="font-medium">Amount</span>
+              </div>
+              <span className="text-3xl font-bold text-white">
+                ${Number(expense.amount).toFixed(2)}
+              </span>
+            </div>
+
+            <Separator />
+
+            {/* Description */}
+            {expense.description && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-muted-foreground">Description</h4>
+                <p className="text-sm">{expense.description}</p>
+              </div>
+            )}
+
+            {/* Split Info */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <Split className="h-4 w-4" />
+                <span>Split</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{getSplitText()}</Badge>
+              </div>
+            </div>
+
+            {/* Created By */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>Logged by</span>
+              </div>
+              <p className="text-sm">{expense.created_by_name || 'Unknown'}</p>
+            </div>
+
+            {/* Date */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>Date</span>
+              </div>
+              <p className="text-sm">
+                {format(new Date(expense.created_at), 'MMMM d, yyyy • h:mm a')}
+              </p>
+            </div>
+
+            {/* Receipt */}
+            {expense.receipt_url && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                  <Receipt className="h-4 w-4" />
+                  <span>Receipt</span>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={expense.receipt_url} target="_blank" rel="noopener noreferrer">
+                    View Receipt
+                  </a>
+                </Button>
+              </div>
+            )}
+
+            <Separator />
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    toast({
+                      title: 'Edit expense',
+                      description: 'Edit functionality coming soon!'
+                    })
+                  }}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              )}
+
+              {canDelete && (
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              )}
+            </div>
+
+            {!canEdit && !canDelete && (
+              <p className="text-sm text-center text-muted-foreground">
+                Only the person who logged this expense or a Manager can edit or delete it.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete expense?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this ${Number(expense.amount).toFixed(2)} expense
+              from {expense.category}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
