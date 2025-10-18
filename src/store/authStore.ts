@@ -76,12 +76,33 @@ export const useAuthStore = create<AuthState>()(
 
           await authService.login(email, password)
 
-          // Fetch full session
-          const session = await authService.getUserSession()
+          // Wait a bit for the profile to be created by the trigger
+          await new Promise(resolve => setTimeout(resolve, 500))
+
+          // Fetch full session with retries
+          let session = null
+          let retries = 3
+          while (retries > 0 && !session) {
+            try {
+              session = await authService.getUserSession()
+              if (session) break
+            } catch (err) {
+              console.warn('Retry fetching session...', err)
+              retries--
+              if (retries > 0) {
+                await new Promise(resolve => setTimeout(resolve, 500))
+              }
+            }
+          }
+
+          if (!session) {
+            throw new Error('Failed to load user session. Please try logging in again.')
+          }
+
           set({ session })
 
           // Load partner if paired
-          if (session && session.couple && session.couple.is_paired) {
+          if (session.couple && session.couple.is_paired) {
             const partner = await authService.getPartnerProfile(
               session.couple.id,
               session.user.id
@@ -90,6 +111,7 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error('Login failed:', error)
+          set({ isLoading: false })
           throw error
         } finally {
           set({ isLoading: false })
@@ -106,11 +128,33 @@ export const useAuthStore = create<AuthState>()(
           // Auto-login after signup
           await authService.login(email, password)
 
-          // Fetch session
-          const session = await authService.getUserSession()
+          // Wait for profile creation
+          await new Promise(resolve => setTimeout(resolve, 1000))
+
+          // Fetch session with retries
+          let session = null
+          let retries = 3
+          while (retries > 0 && !session) {
+            try {
+              session = await authService.getUserSession()
+              if (session) break
+            } catch (err) {
+              console.warn('Retry fetching session after signup...', err)
+              retries--
+              if (retries > 0) {
+                await new Promise(resolve => setTimeout(resolve, 500))
+              }
+            }
+          }
+
+          if (!session) {
+            throw new Error('Account created but failed to load session. Please try logging in.')
+          }
+
           set({ session })
         } catch (error) {
           console.error('Signup failed:', error)
+          set({ isLoading: false })
           throw error
         } finally {
           set({ isLoading: false })
@@ -180,15 +224,11 @@ export const useAuthStore = create<AuthState>()(
 authService.onAuthStateChange(async (event, supabaseSession) => {
   const store = useAuthStore.getState()
 
-  if (event === 'SIGNED_IN' && supabaseSession) {
-    // Refresh session on sign in
-    await store.refreshSession()
-  } else if (event === 'SIGNED_OUT') {
+  // Only handle SIGNED_OUT event here
+  // Login/signup functions handle their own session loading to avoid race conditions
+  if (event === 'SIGNED_OUT') {
     // Clear session on sign out
     store.setSession(null)
     store.setPartner(null)
-  } else if (event === 'TOKEN_REFRESHED' && supabaseSession) {
-    // Optionally refresh on token refresh
-    await store.refreshSession()
   }
 })
