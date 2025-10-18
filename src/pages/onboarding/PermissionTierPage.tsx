@@ -13,7 +13,7 @@ import { ArrowRight, UserCheck, Users } from 'lucide-react'
 
 export const PermissionTierPage = () => {
   const navigate = useNavigate()
-  const updateProfile = useAuthStore((state) => state.updateProfile)
+  const { session, updateProfile } = useAuthStore()
   const [error, setError] = useState<string | null>(null)
 
   const {
