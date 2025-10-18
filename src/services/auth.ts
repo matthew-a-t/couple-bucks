@@ -91,6 +91,7 @@ export const authService = {
    * Get user profile
    */
   async getProfile(userId: string): Promise<Profile | null> {
+    console.log('[Auth] Fetching profile for user:', userId)
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -98,10 +99,16 @@ export const authService = {
       .single()
 
     if (error) {
-      if (error.code === 'PGRST116') return null // No rows returned
+      console.error('[Auth] Profile fetch error:', error)
+      if (error.code === 'PGRST116') {
+        console.error('[Auth] PGRST116: No rows returned - profile does not exist')
+        return null // No rows returned
+      }
+      console.error('[Auth] Throwing profile fetch error')
       throw error
     }
 
+    console.log('[Auth] Profile fetched successfully:', data)
     return data
   },
 
@@ -131,26 +138,42 @@ export const authService = {
    * Get full user session with profile and couple data
    */
   async getUserSession(): Promise<UserSession | null> {
+    console.log('[Auth] Getting user session...')
+
     const user = await this.getCurrentUser()
-    if (!user) return null
+    if (!user) {
+      console.error('[Auth] No user found')
+      return null
+    }
+    console.log('[Auth] User found:', user.id, user.email)
 
     const profile = await this.getProfile(user.id)
-    if (!profile) return null
+    if (!profile) {
+      console.error('[Auth] No profile found for user:', user.id)
+      return null
+    }
+    console.log('[Auth] Profile found:', profile)
 
     let couple = null
     if (profile.couple_id) {
+      console.log('[Auth] Fetching couple data:', profile.couple_id)
       const { data, error } = await supabase
         .from('couples')
         .select('*')
         .eq('id', profile.couple_id)
         .single()
 
-      if (!error && data) {
+      if (error) {
+        console.error('[Auth] Error fetching couple:', error)
+      } else if (data) {
+        console.log('[Auth] Couple found:', data)
         couple = data
       }
+    } else {
+      console.log('[Auth] No couple_id, user not paired yet')
     }
 
-    return {
+    const session = {
       user: {
         id: user.id,
         email: user.email!
@@ -158,6 +181,8 @@ export const authService = {
       profile,
       couple
     }
+    console.log('[Auth] Session created successfully:', session)
+    return session
   },
 
   /**
