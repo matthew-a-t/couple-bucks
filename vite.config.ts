@@ -39,6 +39,10 @@ export default defineConfig({
           }
         ]
       },
+      workbox: {
+        // Use generateSW mode with safer defaults for Windows paths
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}']
+      },
       devOptions: {
         enabled: false
       }

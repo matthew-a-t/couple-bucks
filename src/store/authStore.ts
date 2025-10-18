@@ -221,7 +221,7 @@ export const useAuthStore = create<AuthState>()(
 )
 
 // Setup auth state change listener
-authService.onAuthStateChange(async (event, supabaseSession) => {
+authService.onAuthStateChange(async (event) => {
   const store = useAuthStore.getState()
 
   // Only handle SIGNED_OUT event here
