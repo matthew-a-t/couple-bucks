@@ -1,8 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { quickAddButtonsSchema, type QuickAddButtonsData } from '@/types/schemas'
 import { DEFAULT_CATEGORIES } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -15,13 +12,7 @@ export const QuickAddButtonsPage = () => {
   const navigate = useNavigate()
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
-
-  const {
-    handleSubmit,
-    formState: { isSubmitting }
-  } = useForm<QuickAddButtonsData>({
-    resolver: zodResolver(quickAddButtonsSchema)
-  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const toggleCategory = (categoryName: string) => {
     setSelectedCategories((prev) => {
@@ -37,9 +28,12 @@ export const QuickAddButtonsPage = () => {
     })
   }
 
-  const onSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
     try {
       setError(null)
+      setIsSubmitting(true)
 
       // Validate we have at least 4 and at most 6
       if (selectedCategories.length < 4) {
@@ -52,6 +46,8 @@ export const QuickAddButtonsPage = () => {
         return
       }
 
+      console.log('[QuickAdd] Selected categories:', selectedCategories)
+
       // Store selected buttons in sessionStorage
       sessionStorage.setItem('onboarding_quick_add', JSON.stringify(selectedCategories))
 
@@ -60,6 +56,8 @@ export const QuickAddButtonsPage = () => {
     } catch (err: any) {
       console.error('Quick-add buttons error:', err)
       setError(err.message || 'Something went wrong. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -79,7 +77,7 @@ export const QuickAddButtonsPage = () => {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
