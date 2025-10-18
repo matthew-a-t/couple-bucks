@@ -13,8 +13,12 @@ import { couplesService } from '@/services'
 export const QuickAddReviewPage = () => {
   const navigate = useNavigate()
   const { session, refreshSession } = useAuthStore()
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [initialCategories, setInitialCategories] = useState<string[]>([])
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    session?.couple?.quick_add_buttons || []
+  )
+  const [initialCategories, setInitialCategories] = useState<string[]>(
+    session?.couple?.quick_add_buttons || []
+  )
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -22,8 +26,11 @@ export const QuickAddReviewPage = () => {
   useEffect(() => {
     if (session?.couple?.quick_add_buttons) {
       const buttons = session.couple.quick_add_buttons
-      setSelectedCategories(buttons)
-      setInitialCategories(buttons)
+      console.log('[QuickAddReview] Loading buttons:', buttons, 'Count:', buttons.length)
+      setSelectedCategories([...buttons]) // Create new array to ensure state update
+      setInitialCategories([...buttons])
+    } else {
+      console.log('[QuickAddReview] No quick_add_buttons found in session')
     }
   }, [session?.couple?.quick_add_buttons])
 
