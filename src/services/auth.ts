@@ -138,51 +138,57 @@ export const authService = {
    * Get full user session with profile and couple data
    */
   async getUserSession(): Promise<UserSession | null> {
-    console.log('[Auth] Getting user session...')
+    try {
+      console.log('[Auth] Getting user session...')
 
-    const user = await this.getCurrentUser()
-    if (!user) {
-      console.error('[Auth] No user found')
-      return null
-    }
-    console.log('[Auth] User found:', user.id, user.email)
-
-    const profile = await this.getProfile(user.id)
-    if (!profile) {
-      console.error('[Auth] No profile found for user:', user.id)
-      return null
-    }
-    console.log('[Auth] Profile found:', profile)
-
-    let couple = null
-    if (profile.couple_id) {
-      console.log('[Auth] Fetching couple data:', profile.couple_id)
-      const { data, error } = await supabase
-        .from('couples')
-        .select('*')
-        .eq('id', profile.couple_id)
-        .single()
-
-      if (error) {
-        console.error('[Auth] Error fetching couple:', error)
-      } else if (data) {
-        console.log('[Auth] Couple found:', data)
-        couple = data
+      const user = await this.getCurrentUser()
+      if (!user) {
+        console.error('[Auth] No user found')
+        return null
       }
-    } else {
-      console.log('[Auth] No couple_id, user not paired yet')
-    }
+      console.log('[Auth] User found:', user.id, user.email)
 
-    const session = {
-      user: {
-        id: user.id,
-        email: user.email!
-      },
-      profile,
-      couple
+      const profile = await this.getProfile(user.id)
+      if (!profile) {
+        console.error('[Auth] No profile found for user:', user.id)
+        return null
+      }
+      console.log('[Auth] Profile found:', profile)
+
+      let couple = null
+      if (profile.couple_id) {
+        console.log('[Auth] Fetching couple data:', profile.couple_id)
+        const { data, error } = await supabase
+          .from('couples')
+          .select('*')
+          .eq('id', profile.couple_id)
+          .single()
+
+        if (error) {
+          console.error('[Auth] Error fetching couple:', error)
+        } else if (data) {
+          console.log('[Auth] Couple found:', data)
+          couple = data
+        }
+      } else {
+        console.log('[Auth] No couple_id, user not paired yet')
+      }
+
+      const session = {
+        user: {
+          id: user.id,
+          email: user.email!
+        },
+        profile,
+        couple
+      }
+      console.log('[Auth] Session created successfully:', session)
+      return session
+    } catch (error) {
+      console.error('[Auth] Fatal error in getUserSession:', error)
+      // Return null instead of throwing to prevent app crash
+      return null
     }
-    console.log('[Auth] Session created successfully:', session)
-    return session
   },
 
   /**

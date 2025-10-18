@@ -52,17 +52,30 @@ export const useAuthStore = create<AuthState>()(
 
             // Load partner info if user is paired
             if (session.couple && session.couple.is_paired) {
-              const partner = await authService.getPartnerProfile(
-                session.couple.id,
-                session.user.id
-              )
-              set({ partner })
+              try {
+                const partner = await authService.getPartnerProfile(
+                  session.couple.id,
+                  session.user.id
+                )
+                set({ partner })
+              } catch (partnerError) {
+                console.warn('Failed to load partner info:', partnerError)
+                // Continue without partner info
+              }
             }
           }
 
           set({ isInitialized: true })
         } catch (error) {
           console.error('Failed to initialize auth:', error)
+          // If session loading fails, log the user out to clear corrupted state
+          try {
+            await authService.logout()
+          } catch (logoutError) {
+            console.error('Failed to logout during error recovery:', logoutError)
+          }
+          // Clear persisted state
+          localStorage.removeItem('couple-bucks-auth')
           set({ session: null, partner: null, isInitialized: true })
         } finally {
           set({ isLoading: false })
