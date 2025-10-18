@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Lightbulb, TrendingUp, AlertCircle, Trophy } from 'lucide-react'
 import { ExpenseWithUser, BudgetWithProgress, DEFAULT_CATEGORIES } from '@/types'
 import { cn } from '@/lib/utils'

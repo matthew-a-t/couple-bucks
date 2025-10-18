@@ -6,14 +6,13 @@ import { BottomNav } from '@/components/shared/BottomNav'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { SpendingInsights } from '@/components/dashboard/SpendingInsights'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import {
   Receipt,
   PiggyBank,
   Calendar,
-  TrendingUp,
   ArrowRight,
   DollarSign,
   Target,
@@ -33,7 +32,7 @@ const getGreeting = () => {
 }
 
 export const DashboardPage = () => {
-  const { session, logout } = useAuthStore()
+  const { session } = useAuthStore()
   const {
     expenses,
     budgets,
