@@ -148,7 +148,7 @@ export const WaitingForPartnerPage = () => {
             <>
               {/* Invite Code Display */}
               <div className="space-y-3">
-                <div className="p-6 bg-gradient-primary rounded-lg text-center">
+                <div className="p-6 rounded-lg text-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
                   <p className="text-white/80 text-sm font-medium mb-2">Your Invite Code</p>
                   <p className="text-white text-3xl font-bold tracking-widest font-mono">
                     {inviteCode}
