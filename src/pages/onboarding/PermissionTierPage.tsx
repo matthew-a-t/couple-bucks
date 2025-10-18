@@ -28,16 +28,20 @@ export const PermissionTierPage = () => {
     try {
       setError(null)
 
+      console.log('[PermissionTier] Submitting:', data)
+
       // Update user's permission tier
       await updateProfile({ permission_tier: data.permissionTier })
 
       // Store permission tier in sessionStorage
       sessionStorage.setItem('onboarding_tier', data.permissionTier)
 
+      console.log('[PermissionTier] Success, navigating to quick-add')
+
       // Navigate to quick-add buttons customization
       navigate('/onboarding/quick-add')
     } catch (err: any) {
-      console.error('Permission tier error:', err)
+      console.error('[PermissionTier] Error:', err)
       setError(err.message || 'Failed to save permission tier. Please try again.')
     }
   }

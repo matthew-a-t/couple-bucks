@@ -89,6 +89,11 @@ export const useAuthStore = create<AuthState>()(
 
           await authService.login(email, password)
 
+          // Clear any stale onboarding data from previous sessions
+          sessionStorage.removeItem('onboarding_survey')
+          sessionStorage.removeItem('onboarding_tier')
+          sessionStorage.removeItem('onboarding_quick_add')
+
           // Wait a bit for the profile to be created by the trigger
           await new Promise(resolve => setTimeout(resolve, 500))
 
@@ -214,10 +219,19 @@ export const useAuthStore = create<AuthState>()(
           const { session } = get()
           if (!session) throw new Error('No active session')
 
+          console.log('[Auth] Updating profile with:', updates)
           await authService.updateProfile(session.user.id, updates)
+          console.log('[Auth] Profile updated successfully')
           await get().refreshSession()
-        } catch (error) {
-          console.error('Failed to update profile:', error)
+        } catch (error: any) {
+          console.error('[Auth] Failed to update profile:', error)
+          console.error('[Auth] Update data was:', updates)
+          console.error('[Auth] Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          })
           throw error
         }
       }
