@@ -33,13 +33,18 @@ export const PermissionTierPage = () => {
       // Update user's permission tier
       await updateProfile({ permission_tier: data.permissionTier })
 
-      // Store permission tier in sessionStorage
-      sessionStorage.setItem('onboarding_tier', data.permissionTier)
-
       console.log('[PermissionTier] Success, navigating to quick-add')
 
-      // Navigate to quick-add buttons customization
-      navigate('/onboarding/quick-add')
+      // Determine if user is User 2 (joined via invite code)
+      const isUser2 = session?.couple?.user2_id === session?.user?.id
+
+      // Navigate to appropriate page
+      // User 2 goes to review page, User 1 goes to regular quick-add
+      if (isUser2) {
+        navigate('/onboarding/quick-add-review')
+      } else {
+        navigate('/onboarding/quick-add')
+      }
     } catch (err: any) {
       console.error('[PermissionTier] Error:', err)
       setError(err.message || 'Failed to save permission tier. Please try again.')

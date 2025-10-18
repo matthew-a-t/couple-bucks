@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DEFAULT_CATEGORIES } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -10,12 +10,22 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store'
 import { couplesService } from '@/services'
 
-export const QuickAddButtonsPage = () => {
+export const QuickAddReviewPage = () => {
   const navigate = useNavigate()
   const { session, refreshSession } = useAuthStore()
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [initialCategories, setInitialCategories] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Load User 1's choices on mount
+  useEffect(() => {
+    if (session?.couple?.quick_add_buttons) {
+      const buttons = session.couple.quick_add_buttons
+      setSelectedCategories(buttons)
+      setInitialCategories(buttons)
+    }
+  }, [session?.couple?.quick_add_buttons])
 
   const toggleCategory = (categoryName: string) => {
     setSelectedCategories((prev) => {
@@ -29,6 +39,10 @@ export const QuickAddButtonsPage = () => {
         return [...prev, categoryName]
       }
     })
+  }
+
+  const hasChanges = () => {
+    return JSON.stringify(selectedCategories.sort()) !== JSON.stringify(initialCategories.sort())
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,19 +64,32 @@ export const QuickAddButtonsPage = () => {
       }
 
       if (!session?.couple?.id) {
-        throw new Error('No couple found. Please complete the survey first.')
+        throw new Error('No couple found. Please ask your partner for a new invite code.')
       }
 
-      // Save quick-add buttons to couple record
-      await couplesService.updateQuickAddButtons(session.couple.id, selectedCategories)
+      // Save changes if user modified the selection
+      if (hasChanges()) {
+        await couplesService.updateSurveyAnswers(
+          session.couple.id,
+          undefined,
+          undefined,
+          undefined,
+          selectedCategories
+        )
+      }
 
-      // Refresh session to get updated couple data
+      // Approve survey (User 2 has completed review)
+      await couplesService.approveSurvey(session.couple.id)
+
+      // Mark onboarding as completed
+      await useAuthStore.getState().updateProfile({ onboarding_completed: true })
+
       await refreshSession()
 
-      // Navigate to couple setup
-      navigate('/onboarding/couple-setup')
+      // Navigate to dashboard
+      navigate('/dashboard')
     } catch (err: any) {
-      console.error('Quick-add buttons error:', err)
+      console.error('Quick-add review error:', err)
       setError(err.message || 'Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
@@ -75,12 +102,12 @@ export const QuickAddButtonsPage = () => {
         <CardHeader className="text-center">
           <div className="mb-4">
             <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">3</span>
+              <Check className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Customize quick-add buttons</CardTitle>
+          <CardTitle className="text-2xl">Review quick-add buttons</CardTitle>
           <CardDescription>
-            Select 4-6 categories for one-tap expense logging
+            Your partner selected these categories. Modify if needed.
           </CardDescription>
         </CardHeader>
 
@@ -89,6 +116,14 @@ export const QuickAddButtonsPage = () => {
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {hasChanges() && (
+              <Alert>
+                <AlertDescription>
+                  You've made changes. Click Continue to save them.
+                </AlertDescription>
               </Alert>
             )}
 
@@ -141,14 +176,24 @@ export const QuickAddButtonsPage = () => {
               </p>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting || selectedCategories.length < 4}
-            >
-              Continue
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(-1)}
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={isSubmitting || selectedCategories.length < 4}
+              >
+                {hasChanges() ? 'Save & Continue' : 'Continue'}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

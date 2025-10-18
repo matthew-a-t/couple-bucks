@@ -95,6 +95,7 @@ export interface UserSession {
     full_name: string | null
     permission_tier: 'logger' | 'manager'
     couple_id: string | null
+    onboarding_completed: boolean
   }
   couple: {
     id: string
@@ -103,6 +104,10 @@ export interface UserSession {
     is_paired: boolean
     account_type: string
     default_split_type: string
+    track_income: boolean
+    survey_status: string
+    survey_completed_by_user1_at: string | null
+    survey_approved_by_user2_at: string | null
     custom_categories: string[]
     quick_add_buttons: string[]
     invite_code?: string | null

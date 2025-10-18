@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { Couple, CoupleInsert, CoupleUpdate, AccountType, SplitType } from '@/types/database'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 /**
  * Couples Service
@@ -38,6 +39,9 @@ export const couplesService = {
       account_type: accountType,
       default_split_type: defaultSplitType,
       track_income: trackIncome,
+      survey_status: 'draft',
+      survey_completed_by_user1_at: null,
+      survey_approved_by_user2_at: null,
       custom_categories: customCategories || [
         'Groceries',
         'Dining Out',
@@ -207,5 +211,123 @@ export const couplesService = {
 
     if (error) throw error
     return data
+  },
+
+  /**
+   * Subscribe to real-time couple updates
+   * Returns a channel that must be unsubscribed when component unmounts
+   */
+  subscribeToCoupleChanges(
+    coupleId: string,
+    onUpdate: (couple: Couple) => void
+  ): RealtimeChannel {
+    const channel = supabase
+      .channel(`couple-${coupleId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'couples',
+          filter: `id=eq.${coupleId}`
+        },
+        (payload) => {
+          onUpdate(payload.new as Couple)
+        }
+      )
+      .subscribe()
+
+    return channel
+  },
+
+  /**
+   * Subscribe to partner profile updates
+   * Useful for detecting when partner completes onboarding
+   */
+  subscribeToPartnerUpdates(
+    partnerId: string,
+    onUpdate: (profile: any) => void
+  ): RealtimeChannel {
+    const channel = supabase
+      .channel(`partner-${partnerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${partnerId}`
+        },
+        (payload) => {
+          onUpdate(payload.new)
+        }
+      )
+      .subscribe()
+
+    return channel
+  },
+
+  /**
+   * Save survey answers as draft (User 1 in progress)
+   */
+  async saveSurveyDraft(
+    coupleId: string,
+    accountType: AccountType,
+    defaultSplitType: SplitType,
+    trackIncome: boolean
+  ): Promise<Couple> {
+    return this.updateCouple(coupleId, {
+      account_type: accountType,
+      default_split_type: defaultSplitType,
+      track_income: trackIncome,
+      survey_status: 'draft'
+    })
+  },
+
+  /**
+   * Mark survey as completed by User 1 (ready for User 2 review)
+   */
+  async completeSurveyByUser1(coupleId: string): Promise<Couple> {
+    return this.updateCouple(coupleId, {
+      survey_status: 'pending_review',
+      survey_completed_by_user1_at: new Date().toISOString()
+    })
+  },
+
+  /**
+   * Update survey answers (User 2 reviews and modifies)
+   */
+  async updateSurveyAnswers(
+    coupleId: string,
+    accountType?: AccountType,
+    defaultSplitType?: SplitType,
+    trackIncome?: boolean,
+    quickAddButtons?: string[]
+  ): Promise<Couple> {
+    const updates: CoupleUpdate = {}
+
+    if (accountType !== undefined) updates.account_type = accountType
+    if (defaultSplitType !== undefined) updates.default_split_type = defaultSplitType
+    if (trackIncome !== undefined) updates.track_income = trackIncome
+    if (quickAddButtons !== undefined) updates.quick_add_buttons = quickAddButtons
+
+    return this.updateCouple(coupleId, updates)
+  },
+
+  /**
+   * Approve survey and finalize onboarding (User 2 completes review)
+   */
+  async approveSurvey(coupleId: string): Promise<Couple> {
+    return this.updateCouple(coupleId, {
+      survey_status: 'approved',
+      survey_approved_by_user2_at: new Date().toISOString()
+    })
+  },
+
+  /**
+   * Unsubscribe from a real-time channel
+   */
+  async unsubscribe(channel: RealtimeChannel): Promise<void> {
+    await supabase.removeChannel(channel)
   }
 }

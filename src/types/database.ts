@@ -5,6 +5,7 @@ export type PermissionTier = 'logger' | 'manager'
 export type SplitType = 'fifty_fifty' | 'proportional' | 'custom' | 'single_payer'
 export type AccountType = 'joint' | 'separate' | 'mixed'
 export type BillFrequency = 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'custom'
+export type SurveyStatus = 'draft' | 'pending_review' | 'approved'
 
 export interface Profile {
   id: string
@@ -12,6 +13,7 @@ export interface Profile {
   full_name: string | null
   permission_tier: PermissionTier
   couple_id: string | null
+  onboarding_completed: boolean
 
   // Notification preferences
   notifications_enabled: boolean
@@ -33,6 +35,11 @@ export interface Couple {
   account_type: AccountType
   default_split_type: SplitType
   track_income: boolean
+
+  // Survey status tracking
+  survey_status: SurveyStatus
+  survey_completed_by_user1_at: string | null
+  survey_approved_by_user2_at: string | null
 
   // Custom categories (JSON array)
   custom_categories: string[]

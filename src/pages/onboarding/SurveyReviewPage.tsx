@@ -9,12 +9,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import { couplesService } from '@/services'
 import type { AccountType, SplitType } from '@/types/database'
 
-export const OnboardingSurveyPage = () => {
+export const SurveyReviewPage = () => {
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const { session, refreshSession } = useAuthStore()
@@ -23,7 +23,7 @@ export const OnboardingSurveyPage = () => {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting, isDirty }
   } = useForm<OnboardingSurveyData>({
     resolver: zodResolver(onboardingSurveySchema) as any,
     defaultValues: {
@@ -39,36 +39,26 @@ export const OnboardingSurveyPage = () => {
     try {
       setError(null)
 
-      if (!session?.user?.id) {
-        throw new Error('User session not found')
+      if (!session?.couple?.id) {
+        throw new Error('No couple found. Please ask your partner for a new invite code.')
       }
 
-      // Check if user already has a couple (editing survey) or is User 2 (joining)
-      if (session?.couple) {
-        // Update existing couple's survey answers
-        await couplesService.saveSurveyDraft(
+      // Update survey answers if user made changes
+      if (isDirty) {
+        await couplesService.updateSurveyAnswers(
           session.couple.id,
           data.accountType as AccountType,
           data.splitMethod as SplitType,
           data.trackIncome
         )
-      } else {
-        // User 1: Create a new draft couple with survey data
-        await couplesService.createCouple(
-          session.user.id,
-          data.accountType as AccountType,
-          data.splitMethod as SplitType,
-          data.trackIncome
-        )
-      }
 
-      // Refresh session to get updated couple data
-      await refreshSession()
+        await refreshSession()
+      }
 
       // Navigate to permission tier selection
       navigate('/onboarding/permission')
     } catch (err: any) {
-      console.error('Survey error:', err)
+      console.error('Survey review error:', err)
       setError(err.message || 'Something went wrong. Please try again.')
     }
   }
@@ -79,12 +69,12 @@ export const OnboardingSurveyPage = () => {
         <CardHeader className="text-center">
           <div className="mb-4">
             <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">1</span>
+              <Check className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Let's set up your finances</CardTitle>
+          <CardTitle className="text-2xl">Review your partner's answers</CardTitle>
           <CardDescription>
-            Answer a few questions so we can customize Couple Bucks for you.
+            Your partner completed the initial setup. Review and modify anything if needed.
           </CardDescription>
         </CardHeader>
 
@@ -96,13 +86,22 @@ export const OnboardingSurveyPage = () => {
               </Alert>
             )}
 
+            {isDirty && (
+              <Alert>
+                <AlertDescription>
+                  You've made changes. Click Continue to save them.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Question 1: Account Type */}
             <div className="space-y-4">
               <Label className="text-base font-semibold">
                 1. How do you manage finances?
               </Label>
               <RadioGroup
-                onValueChange={(value) => setValue('accountType', value as any)}
+                defaultValue={session?.couple?.account_type}
+                onValueChange={(value) => setValue('accountType', value as any, { shouldDirty: true })}
                 className="space-y-3"
               >
                 <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-accent cursor-pointer">
@@ -146,7 +145,8 @@ export const OnboardingSurveyPage = () => {
                 2. How do you split expenses?
               </Label>
               <RadioGroup
-                onValueChange={(value) => setValue('splitMethod', value as any)}
+                defaultValue={session?.couple?.default_split_type}
+                onValueChange={(value) => setValue('splitMethod', value as any, { shouldDirty: true })}
                 className="space-y-3"
               >
                 <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-accent cursor-pointer">
@@ -203,7 +203,7 @@ export const OnboardingSurveyPage = () => {
                 <Checkbox
                   id="trackIncome"
                   checked={trackIncome}
-                  onCheckedChange={(checked) => setValue('trackIncome', checked as boolean)}
+                  onCheckedChange={(checked) => setValue('trackIncome', checked as boolean, { shouldDirty: true })}
                 />
                 <Label htmlFor="trackIncome" className="cursor-pointer flex-1">
                   <div className="font-medium">Yes, track both partner incomes</div>
@@ -214,10 +214,20 @@ export const OnboardingSurveyPage = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              Continue
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(-1)}
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                {isDirty ? 'Save & Continue' : 'Continue'}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

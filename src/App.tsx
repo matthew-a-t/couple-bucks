@@ -9,11 +9,14 @@ import { LoginPage, SignupPage, ResetPasswordPage } from '@/pages/auth'
 
 // Onboarding pages
 import {
+  OnboardingLandingPage,
   OnboardingSurveyPage,
   PermissionTierPage,
   QuickAddButtonsPage,
   CoupleSetupPage,
-  WaitingForPartnerPage
+  WaitingForPartnerPage,
+  SurveyReviewPage,
+  QuickAddReviewPage
 } from '@/pages/onboarding'
 
 // Dashboard
@@ -63,6 +66,14 @@ function App() {
           path="/onboarding"
           element={
             <ProtectedRoute>
+              <OnboardingLandingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/survey"
+          element={
+            <ProtectedRoute>
               <OnboardingSurveyPage />
             </ProtectedRoute>
           }
@@ -96,6 +107,22 @@ function App() {
           element={
             <ProtectedRoute>
               <WaitingForPartnerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/survey-review"
+          element={
+            <ProtectedRoute>
+              <SurveyReviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding/quick-add-review"
+          element={
+            <ProtectedRoute>
+              <QuickAddReviewPage />
             </ProtectedRoute>
           }
         />

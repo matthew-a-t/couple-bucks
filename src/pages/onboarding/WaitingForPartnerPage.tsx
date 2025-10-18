@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Copy, Check, RefreshCw, UserCheck } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import type { Couple } from '@/types/database'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export const WaitingForPartnerPage = () => {
   const navigate = useNavigate()
@@ -24,13 +26,41 @@ export const WaitingForPartnerPage = () => {
       setInviteCode(session.couple.invite_code)
     }
 
-    // Check if partner has joined every 5 seconds
-    const interval = setInterval(async () => {
-      await checkIfPartnerJoined()
-    }, 5000)
+    // Subscribe to real-time couple updates
+    let channel: RealtimeChannel | null = null
 
-    return () => clearInterval(interval)
-  }, [session])
+    if (session?.couple?.id) {
+      channel = couplesService.subscribeToCoupleChanges(
+        session.couple.id,
+        (updatedCouple: Couple) => {
+          // Update invite code if changed
+          if (updatedCouple.invite_code) {
+            setInviteCode(updatedCouple.invite_code)
+          }
+
+          // Check if partner joined
+          if (updatedCouple.is_paired) {
+            toast({
+              title: 'Partner joined!',
+              description: 'Your partner has successfully joined. Welcome to Couple Bucks!'
+            })
+
+            // Navigate to dashboard
+            setTimeout(() => {
+              navigate('/dashboard')
+            }, 1500)
+          }
+        }
+      )
+    }
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (channel) {
+        couplesService.unsubscribe(channel)
+      }
+    }
+  }, [session?.couple?.id, navigate, toast])
 
   const checkIfPartnerJoined = async () => {
     try {
@@ -190,6 +220,39 @@ export const WaitingForPartnerPage = () => {
                   {isChecking ? 'Checking...' : 'Waiting for partner to join'}
                 </AlertDescription>
               </Alert>
+
+              {/* Survey Preview */}
+              {session?.couple && (
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <p className="text-sm font-semibold">Your survey answers:</p>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Account type: </span>
+                      <span className="font-medium">
+                        {session.couple.account_type === 'joint' && 'Joint accounts only'}
+                        {session.couple.account_type === 'separate' && 'Separate accounts with shared expenses'}
+                        {session.couple.account_type === 'mixed' && 'Mix of joint and separate'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Split method: </span>
+                      <span className="font-medium">
+                        {session.couple.default_split_type === 'fifty_fifty' && '50/50 on everything'}
+                        {session.couple.default_split_type === 'proportional' && 'Proportional to income'}
+                        {session.couple.default_split_type === 'custom' && 'Custom per expense'}
+                        {session.couple.default_split_type === 'single_payer' && 'One person pays everything'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Track income: </span>
+                      <span className="font-medium">{session.couple.track_income ? 'Yes' : 'No'}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-2">
+                    Your partner will review and can modify these answers when they join.
+                  </p>
+                </div>
+              )}
 
               {/* Instructions */}
               <div className="bg-accent/50 p-4 rounded-lg space-y-2">
