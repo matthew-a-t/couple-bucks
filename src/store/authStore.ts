@@ -141,9 +141,21 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true })
 
-          await authService.signup(email, password, fullName)
+          const signupResult = await authService.signup(email, password, fullName)
 
-          // Auto-login after signup
+          // Check if email confirmation is required
+          // If user.identities is empty, email confirmation is required
+          const emailConfirmationRequired = !signupResult.user?.identities || signupResult.user.identities.length === 0
+
+          if (emailConfirmationRequired) {
+            // Email confirmation is required, don't auto-login
+            // The user will need to click the confirmation link in their email
+            console.log('Email confirmation required - user needs to check their email')
+            set({ isLoading: false })
+            return
+          }
+
+          // Email confirmation is disabled, proceed with auto-login
           await authService.login(email, password)
 
           // Wait for profile creation

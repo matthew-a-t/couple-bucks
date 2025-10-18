@@ -15,6 +15,7 @@ export const SignupPage = () => {
   const navigate = useNavigate()
   const signup = useAuthStore((state) => state.signup)
   const [error, setError] = useState<string | null>(null)
+  const [emailSent, setEmailSent] = useState(false)
 
   const {
     register,
@@ -27,10 +28,19 @@ export const SignupPage = () => {
   const onSubmit = async (data: SignupFormData) => {
     try {
       setError(null)
+      setEmailSent(false)
+
       await signup(data.email, data.password, data.fullName)
 
-      // Navigate to onboarding after successful signup
-      navigate('/onboarding')
+      // Check if we have a session (email confirmation disabled)
+      const store = useAuthStore.getState()
+      if (store.session) {
+        // Email confirmation is disabled, navigate to onboarding
+        navigate('/onboarding')
+      } else {
+        // Email confirmation is required, show success message
+        setEmailSent(true)
+      }
     } catch (err: any) {
       console.error('Signup error:', err)
 
@@ -62,12 +72,27 @@ export const SignupPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+          {emailSent ? (
+            <div className="space-y-4">
+              <Alert>
+                <AlertDescription className="space-y-2">
+                  <p className="font-semibold">Check your email!</p>
+                  <p>We've sent you a confirmation link. Please click it to activate your account, then come back here to sign in.</p>
+                </AlertDescription>
               </Alert>
-            )}
+              <div className="text-center">
+                <Link to="/login" className="text-primary hover:underline font-medium">
+                  Go to sign in
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
@@ -147,6 +172,7 @@ export const SignupPage = () => {
               </Link>
             </div>
           </form>
+          )}
         </CardContent>
       </Card>
     </div>
