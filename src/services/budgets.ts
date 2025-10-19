@@ -56,12 +56,17 @@ export const budgetsService = {
       }
     }
 
-    // Calculate current spending for this category
+    // Get start of current month
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+    // Calculate current spending for this category (current month only)
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
       .select('amount')
       .eq('couple_id', coupleId)
       .eq('category', category)
+      .gte('created_at', startOfMonth)
 
     if (expensesError) throw expensesError
 
@@ -98,15 +103,40 @@ export const budgetsService = {
   async getCoupleBudgetsWithProgress(coupleId: string): Promise<BudgetWithProgress[]> {
     const budgets = await this.getCoupleBudgets(coupleId)
 
+    // Get start of current month
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+    // Get expenses for this couple from the current month only
+    const { data: expenses, error: expensesError } = await supabase
+      .from('expenses')
+      .select('category, amount, created_at')
+      .eq('couple_id', coupleId)
+      .gte('created_at', startOfMonth)
+
+    if (expensesError) throw expensesError
+
+    // Calculate spending by category (current month only)
+    const spendingByCategory: Record<string, number> = {}
+    if (expenses) {
+      expenses.forEach((expense) => {
+        const category = expense.category
+        const amount = Number(expense.amount)
+        spendingByCategory[category] = (spendingByCategory[category] || 0) + amount
+      })
+    }
+
     return budgets.map((budget) => {
-      const remaining = Number(budget.limit_amount) - Number(budget.current_spent)
-      const percentage = (Number(budget.current_spent) / Number(budget.limit_amount)) * 100
-      const status = calculateBudgetStatus(Number(budget.current_spent), Number(budget.limit_amount))
+      // Use actual spending from current month expenses
+      const actualSpent = spendingByCategory[budget.category] || 0
+      const remaining = Number(budget.limit_amount) - actualSpent
+      const percentage = (actualSpent / Number(budget.limit_amount)) * 100
+      const status = calculateBudgetStatus(actualSpent, Number(budget.limit_amount))
 
       return {
         ...budget,
         limit_amount: Number(budget.limit_amount),
-        current_spent: Number(budget.current_spent),
+        current_spent: actualSpent, // Current month spending only
         remaining,
         percentage,
         status
@@ -226,13 +256,17 @@ export const budgetsService = {
     const budget = await this.getBudget(budgetId)
     if (!budget) throw new Error('Budget not found')
 
-    // Get all expenses for this category since last reset
+    // Get start of current month
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+
+    // Get all expenses for this category from current month
     const { data: expenses, error } = await supabase
       .from('expenses')
       .select('amount')
       .eq('couple_id', budget.couple_id)
       .eq('category', budget.category)
-      .gte('created_at', budget.last_reset_at)
+      .gte('created_at', startOfMonth)
 
     if (error) throw error
 

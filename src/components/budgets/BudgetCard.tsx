@@ -18,15 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
 import { useToast } from '@/hooks/use-toast'
-import { MoreVertical, Trash2, RotateCcw, TrendingUp, AlertTriangle, Edit3, Check, X, Plus } from 'lucide-react'
+import { Trash2, RotateCcw, TrendingUp, AlertTriangle, Edit3, Check, X, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BudgetCardProps {
@@ -458,32 +451,9 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
                 </div>
               </div>
 
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={handleEdit}>
-                  <Edit3 className="h-3.5 w-3.5" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-3.5 w-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setResetDialogOpen(true)}>
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Reset Spending
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => setDeleteDialogOpen(true)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Category
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <Button variant="ghost" size="icon" onClick={handleEdit}>
+                <Edit3 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           )}
         </CardHeader>

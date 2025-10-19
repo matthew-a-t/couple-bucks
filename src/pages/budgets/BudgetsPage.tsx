@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, PiggyBank, TrendingUp, AlertCircle, Search, Calendar } from 'lucide-react'
+import { Plus, PiggyBank, TrendingUp, AlertCircle, Search, Calendar, XCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { DEFAULT_CATEGORIES } from '@/types'
 
 export const BudgetsPage = () => {
@@ -106,8 +106,15 @@ export const BudgetsPage = () => {
     const existingBudget = budgets.find((b) => b.category === cat.name)
     if (existingBudget) return null
 
-    // Calculate current spending for this category
-    const categoryExpenses = expenses.filter((e) => e.category === cat.name)
+    // Get start of current month
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    // Calculate current spending for this category (current month only)
+    const categoryExpenses = expenses.filter((e) => {
+      const expenseDate = new Date(e.created_at)
+      return e.category === cat.name && expenseDate >= startOfMonth
+    })
     const currentSpent = categoryExpenses.reduce((sum, e) => sum + Number(e.amount), 0)
 
     return {
@@ -175,7 +182,7 @@ export const BudgetsPage = () => {
     <div className="min-h-screen pb-32">
       <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {/* Overview Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2">
           <Card className="border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Allocated</CardTitle>
@@ -200,32 +207,6 @@ export const BudgetsPage = () => {
                 {totalBudgeted > 0
                   ? `${((totalSpent / totalBudgeted) * 100).toFixed(0)}% of total`
                   : 'No categories set'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Warnings</CardTitle>
-              <AlertCircle className="h-4 w-4 text-warning" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{warningCount}</div>
-              <p className="text-xs text-muted-foreground">
-                75-100% of limit
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Over Limit</CardTitle>
-              <AlertCircle className="h-4 w-4 text-error" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-error">{overBudgetCount}</div>
-              <p className="text-xs text-muted-foreground">
-                Exceeded limit
               </p>
             </CardContent>
           </Card>
@@ -255,17 +236,6 @@ export const BudgetsPage = () => {
             </div>
           ) : (
             <>
-              {/* Alert if over limit */}
-              {overBudgetCount > 0 && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    {overBudgetCount} categor{overBudgetCount !== 1 ? 'ies are' : 'y is'} over the
-                    limit. Consider adjusting your spending or increasing the limit.
-                  </AlertDescription>
-                </Alert>
-              )}
-
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {allBudgets.map((budget) => (
                   <BudgetCard
