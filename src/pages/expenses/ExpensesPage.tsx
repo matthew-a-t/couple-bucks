@@ -88,7 +88,7 @@ export const ExpensesPage = () => {
   const categories = session?.couple?.custom_categories || DEFAULT_CATEGORIES.map((c) => c.name)
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen pb-32">
       <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {/* Quick Add Section */}
         <Card>

@@ -98,7 +98,7 @@ export const QuickAddBubbles = ({ onExpenseAdded }: QuickAddBubblesProps) => {
 
   return (
     <>
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="flex justify-center gap-4">
         {quickAddCategories.map((categoryName) => {
           const category = getCategoryDetails(categoryName)
 
@@ -106,12 +106,10 @@ export const QuickAddBubbles = ({ onExpenseAdded }: QuickAddBubblesProps) => {
             <button
               key={categoryName}
               onClick={() => handleQuickAdd(categoryName)}
-              className="group flex items-center gap-3 px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 border border-border/50 hover:border-primary"
+              className="group flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 active:scale-95 border border-border/50 hover:border-primary"
+              aria-label={`Quick add ${category.name}`}
             >
-              <span className="text-4xl">{category.emoji}</span>
-              <span className="text-lg font-medium text-foreground group-hover:text-primary transition-colors">
-                {category.name}
-              </span>
+              <span className="text-3xl">{category.emoji}</span>
             </button>
           )
         })}

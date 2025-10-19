@@ -55,13 +55,13 @@ export const DashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen pb-32">
       <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {/* Recent Transactions List - 3x1 Grid */}
         {expenses.length > 0 && (
           <section className="flex justify-center">
             <div className="flex flex-col gap-3 max-w-2xl w-full">
-              {expenses.slice(0, 3).map((expense) => (
+              {expenses.slice(0, 3).reverse().map((expense) => (
                 <div
                   key={expense.id}
                   className="grid grid-cols-3 items-center gap-4 p-4 bg-white rounded-xl cursor-pointer transition-all hover:shadow-md hover:border-primary/50 border border-transparent"
@@ -69,7 +69,7 @@ export const DashboardPage = () => {
                 >
                   <div>
                     <p className="font-semibold text-lg text-foreground">{expense.category}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-[10px] text-muted-foreground mt-1">
                       {format(new Date(expense.created_at), 'MMM d, yyyy • h:mm a')}
                     </p>
                   </div>
@@ -89,7 +89,7 @@ export const DashboardPage = () => {
       </main>
 
       {/* Centered Add Expense Group */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-8">
+      <div className="fixed top-[65%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-8">
         {/* Add Expense Button */}
         <button
           onClick={() => setIsAddExpenseOpen(true)}

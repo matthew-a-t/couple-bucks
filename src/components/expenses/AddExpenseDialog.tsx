@@ -134,6 +134,9 @@ export const AddExpenseDialog = ({
       reset()
       setReceiptFile(null)
 
+      // Close dialog
+      onOpenChange(false)
+
       // Notify parent
       onExpenseAdded?.()
     } catch (err: any) {
