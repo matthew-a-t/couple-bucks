@@ -19,7 +19,7 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Trash2, RotateCcw, TrendingUp, AlertTriangle, Edit3, Check, X, Plus } from 'lucide-react'
+import { Trash2, TrendingUp, AlertTriangle, Edit3, Check, X, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BudgetCardProps {

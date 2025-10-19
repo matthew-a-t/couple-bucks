@@ -11,8 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Plus, PiggyBank, TrendingUp, AlertCircle, Search, Calendar, XCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Plus, PiggyBank, TrendingUp, Search, Calendar } from 'lucide-react'
 import { DEFAULT_CATEGORIES } from '@/types'
 
 export const BudgetsPage = () => {
@@ -96,8 +95,6 @@ export const BudgetsPage = () => {
   // Calculate totals
   const totalBudgeted = budgets.reduce((sum, b) => sum + b.limit_amount, 0)
   const totalSpent = budgets.reduce((sum, b) => sum + b.current_spent, 0)
-  const overBudgetCount = budgets.filter((b) => b.status === 'error').length
-  const warningCount = budgets.filter((b) => b.status === 'warning').length
 
   const existingCategories = budgets.map((b) => b.category)
 
