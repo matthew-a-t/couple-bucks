@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Expense, ExpenseInsert, ExpenseUpdate, SplitType } from '@/types/database'
 import type { ExpenseWithUser } from '@/types'
+import { DEFAULT_CATEGORIES } from '@/types'
 
 /**
  * Expenses Service
@@ -36,6 +37,31 @@ export const expensesService = {
     customSplitUser1?: number,
     customSplitUser2?: number
   ): Promise<Expense> {
+    // Check if this is a custom category (not in DEFAULT_CATEGORIES)
+    const isDefaultCategory = DEFAULT_CATEGORIES.some((cat) => cat.name === category)
+
+    if (!isDefaultCategory) {
+      // Get current couple data
+      const { data: couple, error: coupleError } = await supabase
+        .from('couples')
+        .select('custom_categories')
+        .eq('id', coupleId)
+        .single()
+
+      if (coupleError) throw coupleError
+
+      // Add category to custom_categories if not already there
+      const customCategories = couple?.custom_categories || []
+      if (!customCategories.includes(category)) {
+        const { error: updateError } = await supabase
+          .from('couples')
+          .update({ custom_categories: [...customCategories, category] })
+          .eq('id', coupleId)
+
+        if (updateError) throw updateError
+      }
+    }
+
     let splitPercentageUser1 = 50
     let splitPercentageUser2 = 50
 
@@ -195,6 +221,42 @@ export const expensesService = {
    * Update an expense
    */
   async updateExpense(expenseId: string, updates: ExpenseUpdate): Promise<Expense> {
+    // If category is being updated, check if it's custom and add to couple's categories
+    if (updates.category) {
+      const isDefaultCategory = DEFAULT_CATEGORIES.some((cat) => cat.name === updates.category)
+
+      if (!isDefaultCategory) {
+        // Get the expense to find couple_id
+        const { data: expense, error: expenseError } = await supabase
+          .from('expenses')
+          .select('couple_id')
+          .eq('id', expenseId)
+          .single()
+
+        if (expenseError) throw expenseError
+
+        // Get current couple data
+        const { data: couple, error: coupleError } = await supabase
+          .from('couples')
+          .select('custom_categories')
+          .eq('id', expense.couple_id)
+          .single()
+
+        if (coupleError) throw coupleError
+
+        // Add category to custom_categories if not already there
+        const customCategories = couple?.custom_categories || []
+        if (!customCategories.includes(updates.category)) {
+          const { error: updateError } = await supabase
+            .from('couples')
+            .update({ custom_categories: [...customCategories, updates.category] })
+            .eq('id', expense.couple_id)
+
+          if (updateError) throw updateError
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from('expenses')
       .update(updates)

@@ -19,7 +19,7 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Settings, User, Bell, Zap, LogOut, UserX, Copy, Check } from 'lucide-react'
+import { Settings, User, Bell, LogOut, UserX, Copy, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { DEFAULT_CATEGORIES } from '@/types'
 
@@ -143,20 +143,8 @@ export const SettingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="border-b bg-white sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Settings className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">Settings</h1>
-              <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-background pb-32">
+      <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {/* Profile Settings */}
         <Card>
           <CardHeader>
@@ -317,36 +305,6 @@ export const SettingsPage = () => {
 
             <p className="text-xs text-muted-foreground">
               Note: Push notifications require browser permissions and may not work on all devices
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Quick Add Customization */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
-              Quick Add Buttons
-            </CardTitle>
-            <CardDescription>Your customized expense categories</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {session?.couple?.quick_add_buttons?.map((categoryName) => {
-                const category = DEFAULT_CATEGORIES.find((c) => c.name === categoryName)
-                return (
-                  <div
-                    key={categoryName}
-                    className="p-3 border rounded-lg flex flex-col items-center gap-2 text-center"
-                  >
-                    <span className="text-3xl">{category?.emoji || '📝'}</span>
-                    <span className="text-sm font-medium">{categoryName}</span>
-                  </div>
-                )
-              })}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Quick add buttons were configured during onboarding. Currently, they cannot be changed after setup.
             </p>
           </CardContent>
         </Card>

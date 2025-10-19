@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { Budget, BudgetInsert, BudgetUpdate } from '@/types/database'
 import type { BudgetWithProgress } from '@/types'
-import { calculateBudgetStatus } from '@/types'
+import { calculateBudgetStatus, DEFAULT_CATEGORIES } from '@/types'
 
 /**
  * Budgets Service
@@ -31,6 +31,31 @@ export const budgetsService = {
     category: string,
     limitAmount: number
   ): Promise<Budget> {
+    // Check if this is a custom category (not in DEFAULT_CATEGORIES)
+    const isDefaultCategory = DEFAULT_CATEGORIES.some((cat) => cat.name === category)
+
+    if (!isDefaultCategory) {
+      // Get current couple data
+      const { data: couple, error: coupleError } = await supabase
+        .from('couples')
+        .select('custom_categories')
+        .eq('id', coupleId)
+        .single()
+
+      if (coupleError) throw coupleError
+
+      // Add category to custom_categories if not already there
+      const customCategories = couple?.custom_categories || []
+      if (!customCategories.includes(category)) {
+        const { error: updateError } = await supabase
+          .from('couples')
+          .update({ custom_categories: [...customCategories, category] })
+          .eq('id', coupleId)
+
+        if (updateError) throw updateError
+      }
+    }
+
     // Calculate current spending for this category
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
@@ -130,6 +155,42 @@ export const budgetsService = {
    * Update a budget
    */
   async updateBudget(budgetId: string, updates: BudgetUpdate): Promise<Budget> {
+    // If category is being updated, check if it's custom and add to couple's categories
+    if (updates.category) {
+      const isDefaultCategory = DEFAULT_CATEGORIES.some((cat) => cat.name === updates.category)
+
+      if (!isDefaultCategory) {
+        // Get the budget to find couple_id
+        const { data: budget, error: budgetError } = await supabase
+          .from('budgets')
+          .select('couple_id')
+          .eq('id', budgetId)
+          .single()
+
+        if (budgetError) throw budgetError
+
+        // Get current couple data
+        const { data: couple, error: coupleError } = await supabase
+          .from('couples')
+          .select('custom_categories')
+          .eq('id', budget.couple_id)
+          .single()
+
+        if (coupleError) throw coupleError
+
+        // Add category to custom_categories if not already there
+        const customCategories = couple?.custom_categories || []
+        if (!customCategories.includes(updates.category)) {
+          const { error: updateError } = await supabase
+            .from('couples')
+            .update({ custom_categories: [...customCategories, updates.category] })
+            .eq('id', budget.couple_id)
+
+          if (updateError) throw updateError
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from('budgets')
       .update(updates)

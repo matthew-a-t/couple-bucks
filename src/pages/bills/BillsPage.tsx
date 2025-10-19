@@ -39,23 +39,8 @@ export const BillsPage = () => {
   const upcoming = bills.filter((b) => b.status === 'upcoming')
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-white sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Bills</h1>
-              <p className="text-sm text-muted-foreground">Track recurring payments</p>
-            </div>
-            <Button onClick={() => setAddDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Bill
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-background pb-32">
+      <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {billsLoading ? (
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (

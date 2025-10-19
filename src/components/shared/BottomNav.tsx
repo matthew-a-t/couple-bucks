@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store'
-import { Home, Receipt, PiggyBank, Calendar, BarChart3, Settings } from 'lucide-react'
+import { Home, ClipboardCheck, PiggyBank, Calendar, BarChart3, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export const BottomNav = () => {
@@ -10,9 +10,9 @@ export const BottomNav = () => {
 
   // Separate home from other nav items
   const sideNavItems = [
-    { path: '/expenses', icon: Receipt, label: 'Expenses' },
-    { path: '/bills', icon: Calendar, label: 'Bills' },
-    ...(isManager ? [{ path: '/budgets', icon: PiggyBank, label: 'Budgets' }] : []),
+    { path: '/review', icon: ClipboardCheck, label: 'Review' },
+    { path: '/budgets', icon: PiggyBank, label: 'Budget' },
+    ...(isManager ? [{ path: '/bills', icon: Calendar, label: 'Bills' }] : []),
     { path: '/settings', icon: Settings, label: 'Settings' }
   ]
 
@@ -29,7 +29,7 @@ export const BottomNav = () => {
               'flex items-center justify-center w-20 h-20 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95',
               isHomeActive
                 ? 'bg-gradient-to-br from-primary to-secondary'
-                : 'bg-white border-2 border-border'
+                : 'bg-white'
             )}
           >
             <Home

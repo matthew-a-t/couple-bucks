@@ -113,49 +113,39 @@ export const ExpenseDetailDialog = ({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <span className="text-3xl">{getCategoryEmoji(expense.category)}</span>
-              <span>{expense.category}</span>
-            </DialogTitle>
-            <DialogDescription>Expense details</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Amount */}
-            <div className="flex items-center justify-between p-4 bg-gradient-primary rounded-lg">
-              <div className="flex items-center gap-2 text-white/80">
+            <div className="flex items-center justify-between p-5 bg-primary/10 rounded-xl">
+              <div className="flex items-center gap-2 text-primary">
                 <DollarSign className="h-5 w-5" />
                 <span className="font-medium">Amount</span>
               </div>
-              <span className="text-3xl font-bold text-white">
+              <span className="text-3xl font-bold text-primary">
                 ${Number(expense.amount).toFixed(2)}
               </span>
             </div>
 
-            <Separator />
-
             {/* Description */}
             {expense.description && (
-              <div className="space-y-2">
+              <div className="p-4 bg-accent/5 rounded-xl space-y-2">
                 <h4 className="text-sm font-semibold text-muted-foreground">Description</h4>
                 <p className="text-sm">{expense.description}</p>
               </div>
             )}
 
             {/* Split Info */}
-            <div className="space-y-2">
+            <div className="p-4 bg-accent/5 rounded-xl space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                 <Split className="h-4 w-4" />
                 <span>Split</span>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">{getSplitText()}</Badge>
+                <Badge variant="secondary" className="rounded-full">{getSplitText()}</Badge>
               </div>
             </div>
 
             {/* Created By */}
-            <div className="space-y-2">
+            <div className="p-4 bg-accent/5 rounded-xl space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                 <User className="h-4 w-4" />
                 <span>Logged by</span>
@@ -164,7 +154,7 @@ export const ExpenseDetailDialog = ({
             </div>
 
             {/* Date */}
-            <div className="space-y-2">
+            <div className="p-4 bg-accent/5 rounded-xl space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 <span>Date</span>
@@ -176,12 +166,12 @@ export const ExpenseDetailDialog = ({
 
             {/* Receipt */}
             {expense.receipt_url && (
-              <div className="space-y-2">
+              <div className="p-4 bg-accent/5 rounded-xl space-y-2">
                 <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                   <Receipt className="h-4 w-4" />
                   <span>Receipt</span>
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" className="rounded-xl" asChild>
                   <a href={expense.receipt_url} target="_blank" rel="noopener noreferrer">
                     View Receipt
                   </a>
@@ -189,14 +179,12 @@ export const ExpenseDetailDialog = ({
               </div>
             )}
 
-            <Separator />
-
             {/* Actions */}
-            <div className="flex gap-2">
+            <div className="flex gap-3 pt-2">
               {canEdit && (
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-14 text-base font-semibold rounded-2xl"
                   onClick={() => {
                     toast({
                       title: 'Edit expense',
@@ -204,7 +192,7 @@ export const ExpenseDetailDialog = ({
                     })
                   }}
                 >
-                  <Pencil className="mr-2 h-4 w-4" />
+                  <Pencil className="mr-2 h-5 w-5" />
                   Edit
                 </Button>
               )}
@@ -212,10 +200,10 @@ export const ExpenseDetailDialog = ({
               {canDelete && (
                 <Button
                   variant="destructive"
-                  className="flex-1"
+                  className="flex-1 h-14 text-base font-semibold rounded-2xl"
                   onClick={() => setDeleteDialogOpen(true)}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-5 w-5" />
                   Delete
                 </Button>
               )}
@@ -241,11 +229,11 @@ export const ExpenseDetailDialog = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting} className="h-14 text-base font-semibold rounded-2xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-14 text-base font-semibold rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>

@@ -18,8 +18,7 @@ export const QuickAddButtons = ({ onExpenseAdded }: QuickAddButtonsProps) => {
   const quickAddCategories = session?.couple?.quick_add_buttons || [
     'Groceries',
     'Dining Out',
-    'Gas',
-    'Coffee'
+    'Gas'
   ]
 
   const handleQuickAdd = (categoryName: string) => {

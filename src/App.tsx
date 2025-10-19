@@ -22,8 +22,8 @@ import {
 // Dashboard
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 
-// Expenses
-import { ExpensesPage } from '@/pages/expenses/ExpensesPage'
+// Review
+import { ReviewPage } from '@/pages/review/ReviewPage'
 
 // Budgets
 import { BudgetsPage } from '@/pages/budgets/BudgetsPage'
@@ -137,21 +137,21 @@ function App() {
           }
         />
 
-        {/* Expenses Routes */}
+        {/* Review Routes */}
         <Route
-          path="/expenses"
+          path="/review"
           element={
             <ProtectedRoute requirePaired={true}>
-              <ExpensesPage />
+              <ReviewPage />
             </ProtectedRoute>
           }
         />
 
-        {/* Budgets Routes (Manager only) */}
+        {/* Budgets Routes */}
         <Route
           path="/budgets"
           element={
-            <ProtectedRoute requirePaired={true} requireTier="manager">
+            <ProtectedRoute requirePaired={true}>
               <BudgetsPage />
             </ProtectedRoute>
           }

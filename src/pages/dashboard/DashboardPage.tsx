@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
+import { format } from 'date-fns'
 import { useAuthStore, useCoupleStore } from '@/store'
 import { BottomNav } from '@/components/shared/BottomNav'
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog'
+import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog'
+import { QuickAddBubbles } from '@/components/expenses/QuickAddBubbles'
 import { Plus } from 'lucide-react'
+import type { Expense } from '@/types'
 
 export const DashboardPage = () => {
   const { session } = useAuthStore()
@@ -14,10 +18,12 @@ export const DashboardPage = () => {
   } = useCoupleStore()
 
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
   useEffect(() => {
     if (session?.couple?.id) {
-      loadExpenses(session.couple.id, 5)
+      loadExpenses(session.couple.id) // Load all expenses for chart
       subscribeToExpenses(session.couple.id)
 
       return () => {
@@ -26,53 +32,76 @@ export const DashboardPage = () => {
     }
   }, [session?.couple?.id])
 
-  const handleExpenseAdded = () => {
+  const handleExpenseAdded = async () => {
     if (session?.couple?.id) {
-      loadExpenses(session.couple.id, 5)
+      // Refresh session to get updated custom_categories
+      await useAuthStore.getState().refreshSession()
+      loadExpenses(session.couple.id)
       setIsAddExpenseOpen(false)
+    }
+  }
+
+  const handleTransactionClick = (expense: Expense) => {
+    setSelectedExpense(expense)
+    setIsDetailDialogOpen(true)
+  }
+
+  const handleExpenseDeleted = () => {
+    setIsDetailDialogOpen(false)
+    setSelectedExpense(null)
+    if (session?.couple?.id) {
+      loadExpenses(session.couple.id)
     }
   }
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <main className="px-4 pt-6 space-y-8 max-w-[90rem] mx-auto">
-        {/* Recent Transactions List */}
-        <section>
-          {expenses.length === 0 ? (
-            <div className="flex items-center justify-center p-12 bg-white border border-border rounded-xl">
-              <p className="text-muted-foreground text-center">No recent transactions</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
+      <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
+        {/* Recent Transactions List - 3x1 Grid */}
+        {expenses.length > 0 && (
+          <section className="flex justify-center">
+            <div className="flex flex-col gap-3 max-w-2xl w-full">
               {expenses.slice(0, 3).map((expense) => (
                 <div
                   key={expense.id}
-                  className="flex items-center justify-between p-4 bg-white border border-border rounded-xl"
+                  className="grid grid-cols-3 items-center gap-4 p-4 bg-white rounded-xl cursor-pointer transition-all hover:shadow-md hover:border-primary/50 border border-transparent"
+                  onClick={() => handleTransactionClick(expense)}
                 >
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{expense.category}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {expense.description || 'No description'}
+                  <div>
+                    <p className="font-semibold text-lg text-foreground">{expense.category}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {format(new Date(expense.created_at), 'MMM d, yyyy • h:mm a')}
                     </p>
                   </div>
-                  <span className="font-bold text-foreground">${Number(expense.amount).toFixed(2)}</span>
+                  <div className="text-center">
+                    <p className="text-base text-muted-foreground truncate">
+                      {expense.description || ''}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-bold text-xl text-foreground">${Number(expense.amount).toFixed(2)}</span>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-        </section>
-
-        {/* Add Expense Button - Large and centered */}
-        <div className="flex justify-center py-12">
-          <button
-            onClick={() => setIsAddExpenseOpen(true)}
-            className="group relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-primary to-secondary shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center"
-            aria-label="Add expense"
-          >
-            <Plus className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 text-white" strokeWidth={2.5} />
-          </button>
-        </div>
+          </section>
+        )}
       </main>
+
+      {/* Centered Add Expense Group */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-8">
+        {/* Add Expense Button */}
+        <button
+          onClick={() => setIsAddExpenseOpen(true)}
+          className="group w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full bg-gradient-to-br from-primary to-secondary shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center"
+          aria-label="Add expense"
+        >
+          <Plus className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 text-white" strokeWidth={2.5} />
+        </button>
+
+        {/* Quick Add Bubbles */}
+        <QuickAddBubbles onExpenseAdded={handleExpenseAdded} />
+      </div>
 
       <BottomNav />
 
@@ -81,6 +110,15 @@ export const DashboardPage = () => {
         onOpenChange={setIsAddExpenseOpen}
         onExpenseAdded={handleExpenseAdded}
       />
+
+      {selectedExpense && (
+        <ExpenseDetailDialog
+          expense={selectedExpense as any}
+          open={isDetailDialogOpen}
+          onOpenChange={setIsDetailDialogOpen}
+          onExpenseDeleted={handleExpenseDeleted}
+        />
+      )}
     </div>
   )
 }

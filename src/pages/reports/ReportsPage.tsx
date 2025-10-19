@@ -196,23 +196,8 @@ export const ReportsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="border-b bg-white sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Reports</h1>
-              <p className="text-sm text-muted-foreground">Analyze spending patterns</p>
-            </div>
-            <Button onClick={handleExportCSV} disabled={filteredExpenses.length === 0}>
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-background pb-32">
+      <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {/* Date Range Filter */}
         <Card>
           <CardHeader>

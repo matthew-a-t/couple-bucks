@@ -96,15 +96,7 @@ export const AddBillDialog = ({ open, onOpenChange, onBillAdded }: AddBillDialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Add Bill
-          </DialogTitle>
-          <DialogDescription>Create a recurring bill</DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
@@ -112,27 +104,28 @@ export const AddBillDialog = ({ open, onOpenChange, onBillAdded }: AddBillDialog
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="name">Bill Name *</Label>
+            <div className="col-span-2 space-y-3">
+              <Label htmlFor="name" className="text-base font-semibold">Bill Name *</Label>
               <Input
                 id="name"
                 placeholder="e.g., Electricity"
                 {...register('name')}
                 disabled={isSubmitting}
+                className="h-14 text-lg rounded-xl"
               />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="amount" className="text-base font-semibold">Amount *</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">$</span>
                 <Input
                   id="amount"
                   type="number"
                   step="0.01"
                   placeholder="0.00"
-                  className="pl-7"
+                  className="pl-8 h-14 text-lg rounded-xl"
                   {...register('amount')}
                   disabled={isSubmitting}
                 />
@@ -140,62 +133,63 @@ export const AddBillDialog = ({ open, onOpenChange, onBillAdded }: AddBillDialog
               {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="category" className="text-base font-semibold">Category *</Label>
               <Select
                 value={watch('category')}
                 onValueChange={(value) => setValue('category', value)}
                 disabled={isSubmitting}
               >
-                <SelectTrigger id="category">
+                <SelectTrigger id="category" className="h-14 text-base rounded-xl">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    <SelectItem key={cat} value={cat} className="text-base py-3">{cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="due_date">Due Date *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="due_date" className="text-base font-semibold">Due Date *</Label>
               <Input
                 id="due_date"
                 type="date"
                 {...register('due_date')}
                 disabled={isSubmitting}
+                className="h-14 text-base rounded-xl"
               />
               {errors.due_date && <p className="text-sm text-destructive">{errors.due_date.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="frequency">Frequency *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="frequency" className="text-base font-semibold">Frequency *</Label>
               <Select
                 value={frequency}
                 onValueChange={(value) => setValue('frequency', value as any)}
                 disabled={isSubmitting}
               >
-                <SelectTrigger id="frequency">
+                <SelectTrigger id="frequency" className="h-14 text-base rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
-                  <SelectItem value="annual">Annual</SelectItem>
+                  <SelectItem value="monthly" className="text-base py-3">Monthly</SelectItem>
+                  <SelectItem value="weekly" className="text-base py-3">Weekly</SelectItem>
+                  <SelectItem value="quarterly" className="text-base py-3">Quarterly</SelectItem>
+                  <SelectItem value="annual" className="text-base py-3">Annual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="outline" className="flex-1 h-14 text-base font-semibold rounded-2xl" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Adding...</> : 'Add Bill'}
+            <Button type="submit" className="flex-1 h-14 text-base font-semibold rounded-2xl" disabled={isSubmitting}>
+              {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Adding...</> : 'Add Bill'}
             </Button>
           </div>
         </form>

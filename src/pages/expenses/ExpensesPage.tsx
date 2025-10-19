@@ -94,21 +94,8 @@ export const ExpensesPage = () => {
   const categories = session?.couple?.custom_categories || DEFAULT_CATEGORIES.map((c) => c.name)
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-white sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Expenses</h1>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Total (filtered)</p>
-              <p className="text-2xl font-bold text-primary">${totalAmount.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-background pb-32">
+      <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {/* Quick Add Section */}
         <Card>
           <CardHeader>

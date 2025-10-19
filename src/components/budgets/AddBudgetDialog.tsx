@@ -15,10 +15,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, PiggyBank } from 'lucide-react'
+import { Loader2, PiggyBank, Plus } from 'lucide-react'
 
 interface AddBudgetDialogProps {
   open: boolean
@@ -44,10 +43,11 @@ export const AddBudgetDialog = ({
     (cat) => !existingCategories.includes(cat)
   )
 
+  const [categoryInput, setCategoryInput] = useState('')
+
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
     reset,
     formState: { errors, isSubmitting }
@@ -58,6 +58,13 @@ export const AddBudgetDialog = ({
       limit_amount: ''
     }
   })
+
+  // Filter suggestions based on input
+  const filteredSuggestions = categoryInput
+    ? availableCategories.filter((cat) =>
+        cat.toLowerCase().includes(categoryInput.toLowerCase())
+      )
+    : availableCategories
 
   const onSubmit = async (data: BudgetFormData) => {
     try {
@@ -76,118 +83,140 @@ export const AddBudgetDialog = ({
       )
 
       toast({
-        title: 'Budget created!',
+        title: 'Category created!',
         description: `$${limitAmount.toFixed(2)} limit set for ${data.category}`
       })
 
       reset()
+      setCategoryInput('')
       onBudgetAdded?.()
       onOpenChange(false)
     } catch (err: any) {
       console.error('Add budget error:', err)
-      setError(err.message || 'Failed to create budget. Please try again.')
+      setError(err.message || 'Failed to create category. Please try again.')
     }
+  }
+
+  const handleClose = () => {
+    reset()
+    setCategoryInput('')
+    setError(null)
+    onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <PiggyBank className="h-5 w-5 text-primary" />
-            Create Budget
-          </DialogTitle>
-          <DialogDescription>Set a spending limit for a category</DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          {availableCategories.length === 0 ? (
-            <Alert>
-              <AlertDescription>
-                All categories already have budgets. Delete a budget to create a new one.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <>
-              {/* Category */}
-              <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Select
-                  value={watch('category')}
-                  onValueChange={(value) => setValue('category', value)}
-                  disabled={isSubmitting}
-                >
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.category && (
-                  <p className="text-sm text-destructive">{errors.category.message}</p>
-                )}
-              </div>
+          {/* Category */}
+          <div className="space-y-3">
+            <Label htmlFor="category" className="text-base font-semibold">Category Name *</Label>
+            <Input
+              id="category"
+              placeholder="Select or type a category name..."
+              {...register('category')}
+              value={categoryInput}
+              onChange={(e) => {
+                const value = e.target.value
+                setCategoryInput(value)
+                setValue('category', value)
+              }}
+              disabled={isSubmitting}
+              className="h-14 text-lg rounded-xl"
+            />
+            {errors.category && (
+              <p className="text-sm text-destructive">{errors.category.message}</p>
+            )}
 
-              {/* Limit Amount */}
-              <div className="space-y-2">
-                <Label htmlFor="limit_amount">Monthly Limit *</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    $
-                  </span>
-                  <Input
-                    id="limit_amount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="pl-7"
-                    {...register('limit_amount')}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                {errors.limit_amount && (
-                  <p className="text-sm text-destructive">{errors.limit_amount.message}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  This is an ongoing limit. It won't reset automatically.
+            {/* Available Categories */}
+            {filteredSuggestions.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground font-medium">
+                  {categoryInput ? 'Matching categories:' : 'Available categories:'}
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  {filteredSuggestions.map((cat) => {
+                    const categoryData = DEFAULT_CATEGORIES.find((c) => c.name === cat)
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => {
+                          setCategoryInput(cat)
+                          setValue('category', cat)
+                        }}
+                        className="flex items-center gap-2 px-5 py-3 text-base font-medium bg-primary/10 hover:bg-primary/20 rounded-full transition-all hover:scale-105 min-h-[44px]"
+                      >
+                        <span className="text-lg">{categoryData?.emoji || '📦'}</span>
+                        <span>{cat}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
+            )}
 
-              {/* Actions */}
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Budget'
-                  )}
-                </Button>
+            {categoryInput && !filteredSuggestions.some((cat) => cat.toLowerCase() === categoryInput.toLowerCase()) && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Plus className="h-4 w-4" />
+                <span>Create new category: "{categoryInput}"</span>
               </div>
-            </>
-          )}
+            )}
+          </div>
+
+          {/* Limit Amount */}
+          <div className="space-y-3">
+            <Label htmlFor="limit_amount" className="text-base font-semibold">Spending Limit *</Label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">
+                $
+              </span>
+              <Input
+                id="limit_amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                className="pl-8 h-14 text-lg rounded-xl"
+                {...register('limit_amount')}
+                disabled={isSubmitting}
+              />
+            </div>
+            {errors.limit_amount && (
+              <p className="text-sm text-destructive">{errors.limit_amount.message}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              This is an ongoing limit. It won't reset automatically.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 h-14 text-base font-semibold rounded-2xl"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1 h-14 text-base font-semibold rounded-2xl" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Category'
+              )}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
