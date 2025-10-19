@@ -64,18 +64,13 @@ export const DashboardPage = () => {
               {expenses.slice(0, 3).reverse().map((expense) => (
                 <div
                   key={expense.id}
-                  className="grid grid-cols-3 items-center gap-4 p-4 bg-white rounded-xl cursor-pointer transition-all hover:shadow-md hover:border-primary/50 border border-transparent"
+                  className="grid grid-cols-[1fr_0.75fr] items-center gap-4 p-4 bg-white rounded-xl cursor-pointer transition-all hover:shadow-md hover:border-primary/50 border border-transparent"
                   onClick={() => handleTransactionClick(expense)}
                 >
                   <div>
                     <p className="font-semibold text-lg text-foreground">{expense.category}</p>
                     <p className="text-[10px] text-muted-foreground mt-1">
                       {format(new Date(expense.created_at), 'MMM d, yyyy • h:mm a')}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-base text-muted-foreground truncate">
-                      {expense.description || ''}
                     </p>
                   </div>
                   <div className="text-right">
