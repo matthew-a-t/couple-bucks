@@ -32,7 +32,7 @@ export const ReviewPage = () => {
       <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {/* Spending Chart */}
         <SpendingChart
-          expenses={expenses}
+          expenses={expenses as any}
         />
       </main>
 

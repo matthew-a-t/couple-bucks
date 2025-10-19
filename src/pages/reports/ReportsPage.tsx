@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BarChart3, Calendar, TrendingUp, Users } from 'lucide-react'
-import { format, subDays, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
+import { subDays, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 
 type DateRange = 'all' | 'today' | 'week' | 'month' | 'last_month' | 'last_3_months' | 'year'
 
