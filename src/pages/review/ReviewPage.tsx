@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useAuthStore, useCoupleStore } from '@/store'
 import { SpendingChart } from '@/components/dashboard/SpendingChart'
 import { BottomNav } from '@/components/shared/BottomNav'
-import type { Expense } from '@/types'
 
 export const ReviewPage = () => {
   const session = useAuthStore((state) => state.session)
@@ -12,8 +11,6 @@ export const ReviewPage = () => {
     subscribeToExpenses,
     unsubscribeFromExpenses
   } = useCoupleStore()
-
-  const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>([])
 
   useEffect(() => {
     if (session?.couple?.id) {
@@ -36,7 +33,6 @@ export const ReviewPage = () => {
         {/* Spending Chart */}
         <SpendingChart
           expenses={expenses}
-          onFilteredExpensesChange={setFilteredExpenses}
         />
       </main>
 

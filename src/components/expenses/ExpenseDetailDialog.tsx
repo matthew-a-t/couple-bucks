@@ -5,10 +5,7 @@ import { useAuthStore } from '@/store'
 import { expensesService, budgetsService } from '@/services'
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
+  DialogContent
 } from '@/components/ui/dialog'
 import {
   AlertDialog,
@@ -22,10 +19,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { Pencil, Trash2, Receipt, User, DollarSign, Calendar, Split } from 'lucide-react'
-import { DEFAULT_CATEGORIES } from '@/types'
 
 interface ExpenseDetailDialogProps {
   expense: ExpenseWithUser
@@ -53,11 +48,6 @@ export const ExpenseDetailDialog = ({
   const canDelete =
     session?.profile.permission_tier === 'manager' ||
     expense.created_by === session?.user.id
-
-  const getCategoryEmoji = (categoryName: string) => {
-    const category = DEFAULT_CATEGORIES.find((cat) => cat.name === categoryName)
-    return category?.emoji || '📦'
-  }
 
   const getSplitText = () => {
     if (expense.split_type === 'fifty_fifty') {

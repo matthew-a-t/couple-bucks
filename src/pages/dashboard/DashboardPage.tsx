@@ -6,7 +6,7 @@ import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog'
 import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog'
 import { QuickAddBubbles } from '@/components/expenses/QuickAddBubbles'
 import { Plus } from 'lucide-react'
-import type { Expense } from '@/types'
+import type { ExpenseWithUser } from '@/types'
 
 export const DashboardPage = () => {
   const { session } = useAuthStore()
@@ -18,7 +18,7 @@ export const DashboardPage = () => {
   } = useCoupleStore()
 
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
-  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseWithUser | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export const DashboardPage = () => {
     }
   }
 
-  const handleTransactionClick = (expense: Expense) => {
+  const handleTransactionClick = (expense: ExpenseWithUser) => {
     setSelectedExpense(expense)
     setIsDetailDialogOpen(true)
   }

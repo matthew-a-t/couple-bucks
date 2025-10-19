@@ -85,12 +85,6 @@ export const ExpensesPage = () => {
     return true
   })
 
-  // Calculate total
-  const totalAmount = filteredExpenses.reduce(
-    (sum, expense) => sum + Number(expense.amount),
-    0
-  )
-
   const categories = session?.couple?.custom_categories || DEFAULT_CATEGORIES.map((c) => c.name)
 
   return (

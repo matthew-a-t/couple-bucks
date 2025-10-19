@@ -1,12 +1,11 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useAuthStore, useCoupleStore } from '@/store'
 import { BottomNav } from '@/components/shared/BottomNav'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BarChart3, Download, Calendar, TrendingUp, Users } from 'lucide-react'
+import { BarChart3, Calendar, TrendingUp, Users } from 'lucide-react'
 import { format, subDays, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
 
 type DateRange = 'all' | 'today' | 'week' | 'month' | 'last_month' | 'last_3_months' | 'year'
@@ -144,43 +143,6 @@ export const ReportsPage = () => {
   }, [filteredExpenses])
 
   const totalSpent = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0)
-
-  // Export to CSV
-  const handleExportCSV = () => {
-    if (filteredExpenses.length === 0) return
-
-    // Create CSV header
-    const headers = ['Date', 'Category', 'Amount', 'Description', 'Split Type', 'Logged By']
-
-    // Create CSV rows
-    const rows = filteredExpenses.map((exp) => [
-      format(new Date(exp.created_at), 'yyyy-MM-dd HH:mm:ss'),
-      exp.category,
-      Number(exp.amount).toFixed(2),
-      exp.description || '',
-      exp.split_type,
-      exp.created_by_name || 'Unknown'
-    ])
-
-    // Combine into CSV string
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
-
-    // Create download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-
-    link.setAttribute('href', url)
-    link.setAttribute('download', `couple-bucks-expenses-${format(new Date(), 'yyyy-MM-dd')}.csv`)
-    link.style.visibility = 'hidden'
-
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
 
   const getDateRangeLabel = (range: DateRange): string => {
     switch (range) {

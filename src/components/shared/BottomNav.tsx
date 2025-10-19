@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store'
-import { Home, ClipboardCheck, PiggyBank, Calendar, BarChart3, Settings } from 'lucide-react'
+import { Home, ClipboardCheck, PiggyBank, Calendar, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export const BottomNav = () => {

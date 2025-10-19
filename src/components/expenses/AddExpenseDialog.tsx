@@ -7,10 +7,7 @@ import { expensesService, budgetsService } from '@/services'
 import { DEFAULT_CATEGORIES } from '@/types'
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
+  DialogContent
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

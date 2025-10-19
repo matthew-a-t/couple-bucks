@@ -19,9 +19,8 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Settings, User, Bell, LogOut, UserX, Copy, Check } from 'lucide-react'
+import { User, Bell, LogOut, UserX, Copy, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { DEFAULT_CATEGORIES } from '@/types'
 
 export const SettingsPage = () => {
   const { session, logout } = useAuthStore()
