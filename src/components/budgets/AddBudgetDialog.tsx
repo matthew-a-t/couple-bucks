@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { budgetFormSchema, type BudgetFormData } from '@/types/schemas'
 import { useAuthStore } from '@/store'
 import { budgetsService, couplesService } from '@/services'
-import { DEFAULT_CATEGORIES } from '@/types'
 import {
   Dialog,
   DialogContent
@@ -14,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Plus } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 interface AddBudgetDialogProps {
   open: boolean

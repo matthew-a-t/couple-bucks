@@ -247,7 +247,9 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
         })
 
         // Save emoji selection
-        await couplesService.updateCategoryEmoji(session.couple.id, editedCategory, editedEmoji)
+        if (session?.couple?.id) {
+          await couplesService.updateCategoryEmoji(session.couple.id, editedCategory, editedEmoji)
+        }
 
         toast({
           title: 'Category updated!',

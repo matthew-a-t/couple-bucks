@@ -9,7 +9,6 @@ export const BottomNav = () => {
 
   // Safely extract permission_tier with fallback to 'logger' (database default)
   const permissionTier = session?.profile?.permission_tier || 'logger'
-  const isManager = permissionTier === 'manager'
   const isPaired = session?.couple?.is_paired ?? false
 
   // Debug logging for permission tier issues

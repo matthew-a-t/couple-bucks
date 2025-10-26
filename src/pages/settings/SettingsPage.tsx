@@ -43,7 +43,6 @@ export const SettingsPage = () => {
   const [budgetAlerts, setBudgetAlerts] = useState(true)
   const [expenseSync, setExpenseSync] = useState(true)
 
-  const isManager = session?.profile.permission_tier === 'manager'
   const inviteCode = session?.couple?.invite_code
 
   useEffect(() => {

@@ -109,6 +109,7 @@ export interface UserSession {
     survey_completed_by_user1_at: string | null
     survey_approved_by_user2_at: string | null
     custom_categories: string[]
+    custom_category_emojis: Record<string, string> | null
     quick_add_buttons: string[]
     invite_code?: string | null
   } | null
