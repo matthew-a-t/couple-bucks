@@ -96,8 +96,6 @@ export const BudgetsPage = () => {
   const totalBudgeted = budgets.reduce((sum, b) => sum + b.limit_amount, 0)
   const totalSpent = budgets.reduce((sum, b) => sum + b.current_spent, 0)
 
-  const existingCategories = budgets.map((b) => b.category)
-
   // Create placeholder budgets for default categories that don't have budgets yet
   const defaultCategoryBudgets = DEFAULT_CATEGORIES.map((cat) => {
     const existingBudget = budgets.find((b) => b.category === cat.name)
@@ -359,7 +357,6 @@ export const BudgetsPage = () => {
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onBudgetAdded={handleBudgetAdded}
-        existingCategories={existingCategories}
       />
 
       {/* Expense Detail Dialog */}

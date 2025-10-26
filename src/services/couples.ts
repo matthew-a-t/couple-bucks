@@ -54,6 +54,7 @@ export const couplesService = {
         'Pets',
         'Other'
       ],
+      custom_category_emojis: null, // Initialize as null, will be set when users customize emojis
       quick_add_buttons: quickAddButtons || ['Groceries', 'Dining Out', 'Gas', 'Coffee'],
       invite_code: inviteCode,
       invite_expires_at: inviteExpiresAt.toISOString(),
@@ -322,6 +323,81 @@ export const couplesService = {
       survey_status: 'approved',
       survey_approved_by_user2_at: new Date().toISOString()
     })
+  },
+
+  /**
+   * Update emoji for a specific category
+   */
+  async updateCategoryEmoji(coupleId: string, categoryName: string, emoji: string): Promise<Couple> {
+    // Get current couple data
+    const { data: couple, error: fetchError } = await supabase
+      .from('couples')
+      .select('custom_category_emojis')
+      .eq('id', coupleId)
+      .single()
+
+    if (fetchError) throw fetchError
+
+    // Update or create the emoji mapping
+    const emojiMap = couple?.custom_category_emojis || {}
+    emojiMap[categoryName] = emoji
+
+    return this.updateCouple(coupleId, {
+      custom_category_emojis: emojiMap
+    })
+  },
+
+  /**
+   * Reset all couple data (expenses, budgets, bills) while maintaining the couple relationship
+   * This clears all financial data but keeps users paired together
+   */
+  async resetCoupleData(coupleId: string): Promise<void> {
+    // Delete all expenses for this couple
+    const { error: expensesError } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('couple_id', coupleId)
+
+    if (expensesError) throw expensesError
+
+    // Delete all budgets for this couple
+    const { error: budgetsError } = await supabase
+      .from('budgets')
+      .delete()
+      .eq('couple_id', coupleId)
+
+    if (budgetsError) throw budgetsError
+
+    // Delete all bills for this couple
+    const { error: billsError } = await supabase
+      .from('bills')
+      .delete()
+      .eq('couple_id', coupleId)
+
+    if (billsError) throw billsError
+
+    // Reset custom categories and emojis to defaults
+    const { error: resetError } = await supabase
+      .from('couples')
+      .update({
+        custom_categories: [
+          'Groceries',
+          'Dining Out',
+          'Transportation',
+          'Utilities',
+          'Entertainment',
+          'Shopping',
+          'Healthcare',
+          'Household',
+          'Pets',
+          'Other'
+        ],
+        custom_category_emojis: null,
+        quick_add_buttons: ['Groceries', 'Dining Out', 'Gas', 'Coffee']
+      })
+      .eq('id', coupleId)
+
+    if (resetError) throw resetError
   },
 
   /**

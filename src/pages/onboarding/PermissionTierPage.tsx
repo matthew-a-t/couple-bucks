@@ -33,17 +33,17 @@ export const PermissionTierPage = () => {
       // Update user's permission tier
       await updateProfile({ permission_tier: data.permissionTier })
 
-      console.log('[PermissionTier] Success, navigating to quick-add')
+      console.log('[PermissionTier] Success, navigating to categories')
 
       // Determine if user is User 2 (joined via invite code)
       const isUser2 = session?.couple?.user2_id === session?.user?.id
 
       // Navigate to appropriate page
-      // User 2 goes to review page, User 1 goes to regular quick-add
+      // User 2 goes to review page, User 1 goes to regular categories page
       if (isUser2) {
-        navigate('/onboarding/quick-add-review')
+        navigate('/onboarding/categories-review')
       } else {
-        navigate('/onboarding/quick-add')
+        navigate('/onboarding/categories')
       }
     } catch (err: any) {
       console.error('[PermissionTier] Error:', err)

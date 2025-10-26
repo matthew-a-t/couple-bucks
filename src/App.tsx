@@ -12,11 +12,11 @@ import {
   OnboardingLandingPage,
   OnboardingSurveyPage,
   PermissionTierPage,
-  QuickAddButtonsPage,
+  CategoryEditingPage,
   CoupleSetupPage,
   WaitingForPartnerPage,
   SurveyReviewPage,
-  QuickAddReviewPage
+  CategoryReviewPage
 } from '@/pages/onboarding'
 
 // Dashboard
@@ -87,10 +87,10 @@ function App() {
           }
         />
         <Route
-          path="/onboarding/quick-add"
+          path="/onboarding/categories"
           element={
             <ProtectedRoute>
-              <QuickAddButtonsPage />
+              <CategoryEditingPage />
             </ProtectedRoute>
           }
         />
@@ -119,10 +119,10 @@ function App() {
           }
         />
         <Route
-          path="/onboarding/quick-add-review"
+          path="/onboarding/categories-review"
           element={
             <ProtectedRoute>
-              <QuickAddReviewPage />
+              <CategoryReviewPage />
             </ProtectedRoute>
           }
         />
@@ -181,7 +181,7 @@ function App() {
         <Route
           path="/settings"
           element={
-            <ProtectedRoute requirePaired={true}>
+            <ProtectedRoute requirePaired={false}>
               <SettingsPage />
             </ProtectedRoute>
           }

@@ -26,10 +26,27 @@ interface BillCardProps {
 
 export const BillCard = ({ bill, onBillUpdated, onBillDeleted }: BillCardProps) => {
   const session = useAuthStore((state) => state.session)
+  const isManager = session?.profile?.permission_tier === 'manager'
   const { toast } = useToast()
   const [isProcessing, setIsProcessing] = useState(false)
 
   const getCategoryEmoji = (categoryName: string) => {
+    // Check if user has selected a custom emoji for this category
+    const customEmojiMap = session?.couple?.custom_category_emojis || {}
+    if (customEmojiMap[categoryName]) {
+      return customEmojiMap[categoryName]
+    }
+
+    // Check custom categories by index
+    const customCategories = session?.couple?.custom_categories || []
+    if (customCategories.length > 0) {
+      const customIndex = customCategories.indexOf(categoryName)
+      if (customIndex !== -1 && DEFAULT_CATEGORIES[customIndex]) {
+        return DEFAULT_CATEGORIES[customIndex].emoji
+      }
+    }
+
+    // Fall back to DEFAULT_CATEGORIES lookup
     const category = DEFAULT_CATEGORIES.find((cat) => cat.name === categoryName)
     return category?.emoji || '📦'
   }
@@ -118,24 +135,26 @@ export const BillCard = ({ bill, onBillUpdated, onBillDeleted }: BillCardProps) 
                 <h3 className="font-semibold truncate">{bill.name}</h3>
                 <p className="text-sm text-muted-foreground">{bill.category}</p>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" disabled={isProcessing}>
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleMarkAsPaid}>
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Mark as Paid
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isManager && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" disabled={isProcessing}>
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleMarkAsPaid}>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Mark as Paid
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-sm">

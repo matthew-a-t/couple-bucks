@@ -1,4 +1,5 @@
 export { BottomNav } from './BottomNav'
+export { InvitePartnerBanner } from './InvitePartnerBanner'
 export { InstallPrompt } from './InstallPrompt'
 export { OfflineIndicator } from './OfflineIndicator'
 export { ErrorBoundary } from './ErrorBoundary'

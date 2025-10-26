@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { BudgetWithProgress } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/types'
-import { budgetsService } from '@/services'
+import { budgetsService, couplesService } from '@/services'
 import { useAuthStore } from '@/store'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -33,7 +33,24 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
   const session = useAuthStore((state) => state.session)
 
   // Helper function to get category emoji - must be defined before state initialization
+  // Handles custom category names and custom emoji selections
   const getCategoryEmoji = (categoryName: string) => {
+    // Check if user has selected a custom emoji for this category
+    const customEmojiMap = session?.couple?.custom_category_emojis || {}
+    if (customEmojiMap[categoryName]) {
+      return customEmojiMap[categoryName]
+    }
+
+    // Check custom categories by index
+    const customCategories = session?.couple?.custom_categories || []
+    if (customCategories.length > 0) {
+      const customIndex = customCategories.indexOf(categoryName)
+      if (customIndex !== -1 && DEFAULT_CATEGORIES[customIndex]) {
+        return DEFAULT_CATEGORIES[customIndex].emoji
+      }
+    }
+
+    // Fall back to DEFAULT_CATEGORIES lookup
     const category = DEFAULT_CATEGORIES.find((cat) => cat.name === categoryName)
     return category?.emoji || '📦'
   }
@@ -78,6 +95,17 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
   }
 
   const handleDelete = async () => {
+    // Prevent deleting placeholder budgets - they don't exist in the database
+    if (budget.isPlaceholder) {
+      toast({
+        title: 'Cannot delete',
+        description: 'This is a placeholder category. It will disappear when you have no expenses in it.',
+        variant: 'destructive'
+      })
+      setDeleteDialogOpen(false)
+      return
+    }
+
     try {
       setIsDeleting(true)
       await budgetsService.deleteBudget(budget.id)
@@ -102,6 +130,17 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
   }
 
   const handleReset = async () => {
+    // Prevent resetting placeholder budgets - they don't exist in the database
+    if (budget.isPlaceholder) {
+      toast({
+        title: 'Cannot reset',
+        description: 'This is a placeholder category. Set a spending limit first.',
+        variant: 'destructive'
+      })
+      setResetDialogOpen(false)
+      return
+    }
+
     try {
       setIsResetting(true)
       await budgetsService.resetBudget(budget.id)
@@ -128,7 +167,15 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
   const handleEdit = () => {
     setEditedCategory(budget.category)
     setEditedEmoji(getCategoryEmoji(budget.category))
-    setEditedLimit(budget.limit_amount.toString())
+
+    // For placeholder budgets, suggest a reasonable limit based on current spending
+    if (budget.isPlaceholder) {
+      const suggestedLimit = Math.max(budget.current_spent * 2, 100)
+      setEditedLimit(suggestedLimit.toFixed(2))
+    } else {
+      setEditedLimit(budget.limit_amount.toString())
+    }
+
     setIsEditing(true)
   }
 
@@ -142,6 +189,19 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
   const handleSaveEdit = async () => {
     try {
       setIsSaving(true)
+
+      // Validate category name first
+      if (!editedCategory.trim()) {
+        toast({
+          title: 'Invalid category',
+          description: 'Please enter a category name',
+          variant: 'destructive'
+        })
+        setIsSaving(false)
+        return
+      }
+
+      // Validate and parse limit amount
       const limitAmount = parseFloat(editedLimit)
 
       if (isNaN(limitAmount) || limitAmount <= 0) {
@@ -150,34 +210,60 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
           description: 'Please enter a valid spending limit',
           variant: 'destructive'
         })
+        setIsSaving(false)
         return
       }
 
-      if (!editedCategory.trim()) {
+      // If this is a placeholder budget, create it instead of updating
+      if (budget.isPlaceholder) {
+        if (!session?.couple?.id) {
+          toast({
+            title: 'Error',
+            description: 'No active couple found',
+            variant: 'destructive'
+          })
+          setIsSaving(false)
+          return
+        }
+
+        await budgetsService.createBudgetForCategory(
+          session.couple.id,
+          editedCategory,
+          limitAmount
+        )
+
+        // Save emoji selection
+        await couplesService.updateCategoryEmoji(session.couple.id, editedCategory, editedEmoji)
+
         toast({
-          title: 'Invalid category',
-          description: 'Please enter a category name',
-          variant: 'destructive'
+          title: 'Budget created!',
+          description: `${editedCategory} budget set to $${limitAmount.toFixed(2)}`
         })
-        return
+      } else {
+        // Update existing budget
+        await budgetsService.updateBudget(budget.id, {
+          category: editedCategory,
+          limit_amount: limitAmount
+        })
+
+        // Save emoji selection
+        await couplesService.updateCategoryEmoji(session.couple.id, editedCategory, editedEmoji)
+
+        toast({
+          title: 'Category updated!',
+          description: `${editedCategory} has been updated`
+        })
       }
 
-      await budgetsService.updateBudget(budget.id, {
-        category: editedCategory,
-        limit_amount: limitAmount
-      })
-
-      toast({
-        title: 'Category updated!',
-        description: `${editedCategory} has been updated`
-      })
+      // Refresh session to get updated emoji mapping
+      await useAuthStore.getState().refreshSession()
 
       setIsEditing(false)
       onBudgetUpdated?.()
     } catch (err: any) {
-      console.error('Update budget error:', err)
+      console.error('Save budget error:', err)
       toast({
-        title: 'Failed to update',
+        title: 'Failed to save',
         description: err.message || 'Please try again',
         variant: 'destructive'
       })
@@ -197,11 +283,18 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
           description: 'Please enter a valid spending limit',
           variant: 'destructive'
         })
+        setIsSaving(false)
         return
       }
 
       if (!session?.couple?.id) {
-        throw new Error('No active couple')
+        toast({
+          title: 'Error',
+          description: 'No active couple found',
+          variant: 'destructive'
+        })
+        setIsSaving(false)
+        return
       }
 
       await budgetsService.createBudgetForCategory(
@@ -381,24 +474,27 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
                 />
               </div>
 
-              {/* Limit Amount - only show for real budgets */}
-              {!budget.isPlaceholder && (
-                <div className="space-y-2">
-                  <Label className="text-sm">Spending Limit</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={editedLimit}
-                      onChange={(e) => setEditedLimit(e.target.value)}
-                      placeholder="0.00"
-                      className="pl-7"
-                      disabled={isSaving}
-                    />
-                  </div>
+              {/* Limit Amount */}
+              <div className="space-y-2">
+                <Label className="text-sm">Spending Limit</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editedLimit}
+                    onChange={(e) => setEditedLimit(e.target.value)}
+                    placeholder="0.00"
+                    className="pl-7"
+                    disabled={isSaving}
+                  />
                 </div>
-              )}
+                {budget.isPlaceholder && (
+                  <p className="text-xs text-muted-foreground">
+                    Set a budget limit to track spending for this category
+                  </p>
+                )}
+              </div>
 
               {/* Action Buttons */}
               <div className="space-y-2 pt-2">
@@ -423,19 +519,21 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
                     {isSaving ? 'Saving...' : 'Save'}
                   </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => {
-                    setIsEditing(false)
-                    setDeleteDialogOpen(true)
-                  }}
-                  disabled={isSaving}
-                  className="w-full"
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete Category
-                </Button>
+                {!budget.isPlaceholder && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setDeleteDialogOpen(true)
+                    }}
+                    disabled={isSaving}
+                    className="w-full"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete Category
+                  </Button>
+                )}
               </div>
             </div>
           ) : (

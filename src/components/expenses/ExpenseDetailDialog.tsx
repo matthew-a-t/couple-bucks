@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { Pencil, Trash2, Receipt, User, DollarSign, Calendar, Split } from 'lucide-react'
+import { EditExpenseDialog } from './EditExpenseDialog'
 
 interface ExpenseDetailDialogProps {
   expense: ExpenseWithUser
@@ -39,6 +40,7 @@ export const ExpenseDetailDialog = ({
   const session = useAuthStore((state) => state.session)
   const { toast } = useToast()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const canEdit =
@@ -60,6 +62,12 @@ export const ExpenseDetailDialog = ({
       return 'Proportional to income'
     }
     return 'Split'
+  }
+
+  const handleExpenseUpdated = () => {
+    setEditDialogOpen(false)
+    onOpenChange(false)
+    onExpenseDeleted?.() // Reuse the same callback to refresh the list
   }
 
   const handleDelete = async () => {
@@ -175,12 +183,7 @@ export const ExpenseDetailDialog = ({
                 <Button
                   variant="outline"
                   className="flex-1 h-14 text-base font-semibold rounded-2xl"
-                  onClick={() => {
-                    toast({
-                      title: 'Edit expense',
-                      description: 'Edit functionality coming soon!'
-                    })
-                  }}
+                  onClick={() => setEditDialogOpen(true)}
                 >
                   <Pencil className="mr-2 h-5 w-5" />
                   Edit
@@ -230,6 +233,14 @@ export const ExpenseDetailDialog = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Expense Dialog */}
+      <EditExpenseDialog
+        expense={expense}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onExpenseUpdated={handleExpenseUpdated}
+      />
     </>
   )
 }

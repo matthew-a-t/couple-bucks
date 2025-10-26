@@ -1,8 +1,11 @@
 export { OnboardingLandingPage } from './OnboardingLandingPage'
 export { OnboardingSurveyPage } from './OnboardingSurveyPage'
 export { PermissionTierPage } from './PermissionTierPage'
-export { QuickAddButtonsPage } from './QuickAddButtonsPage'
+export { CategoryEditingPage } from './CategoryEditingPage'
 export { CoupleSetupPage } from './CoupleSetupPage'
 export { WaitingForPartnerPage } from './WaitingForPartnerPage'
 export { SurveyReviewPage } from './SurveyReviewPage'
+export { CategoryReviewPage } from './CategoryReviewPage'
+// Deprecated - kept for backwards compatibility
+export { QuickAddButtonsPage } from './QuickAddButtonsPage'
 export { QuickAddReviewPage } from './QuickAddReviewPage'

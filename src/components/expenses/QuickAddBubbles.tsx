@@ -86,8 +86,30 @@ export const QuickAddBubbles = ({ onExpenseAdded }: QuickAddBubblesProps) => {
     handleDialogClose()
   }
 
-  // Get category details with emoji
+  // Get category details with emoji (handles custom category names and custom emoji selections)
   const getCategoryDetails = (name: string) => {
+    // Check if user has selected a custom emoji for this category
+    const customEmojiMap = session?.couple?.custom_category_emojis || {}
+    if (customEmojiMap[name]) {
+      return {
+        name,
+        emoji: customEmojiMap[name]
+      }
+    }
+
+    // Check custom categories by index
+    const customCategories = session?.couple?.custom_categories || []
+    if (customCategories.length > 0) {
+      const customIndex = customCategories.indexOf(name)
+      if (customIndex !== -1 && DEFAULT_CATEGORIES[customIndex]) {
+        return {
+          name,
+          emoji: DEFAULT_CATEGORIES[customIndex].emoji
+        }
+      }
+    }
+
+    // Fall back to DEFAULT_CATEGORIES lookup
     return DEFAULT_CATEGORIES.find((cat) => cat.name === name) || { name, emoji: '📦' }
   }
 

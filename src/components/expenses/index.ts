@@ -1,4 +1,5 @@
 export { QuickAddButtons } from './QuickAddButtons'
 export { AddExpenseDialog } from './AddExpenseDialog'
+export { EditExpenseDialog } from './EditExpenseDialog'
 export { ExpensesList } from './ExpensesList'
 export { ExpenseDetailDialog } from './ExpenseDetailDialog'

@@ -321,6 +321,21 @@ TypeScript strict mode enabled. All new code must:
 - **Hosting**: Vercel with automatic deployments
 - **Environments**: Development (local + Supabase dev) and Production (Vercel + Supabase prod)
 
+### Versioning
+Follow semantic versioning (MAJOR.MINOR.PATCH) for all production releases:
+
+- **MAJOR version** (e.g., 1.0.0 → 2.0.0): Breaking changes, major feature overhauls, or significant architectural changes
+- **MINOR version** (e.g., 0.1.0 → 0.2.0): New features, significant improvements, or non-breaking feature additions
+- **PATCH version** (e.g., 0.1.0 → 0.1.1): Bug fixes, minor improvements, or small tweaks
+
+**When pushing to production:**
+1. Review all changes since last release
+2. Determine appropriate version increment based on change size
+3. Update version number in `package.json`
+4. Update version display in Settings page (currently shown as "Couple Bucks v0.1.0")
+5. Create git tag with version number (e.g., `v0.2.0`)
+6. Include version in commit message
+
 ## Reference Documentation
 
 See `initial-app-idea.md` for complete product requirements, user flows, and feature specifications.

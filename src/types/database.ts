@@ -44,6 +44,9 @@ export interface Couple {
   // Custom categories (JSON array)
   custom_categories: string[]
 
+  // Custom category emojis (JSON object mapping category name to emoji)
+  custom_category_emojis: Record<string, string> | null
+
   // Quick-add buttons (JSON array of category names)
   quick_add_buttons: string[]
 

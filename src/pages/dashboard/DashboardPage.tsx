@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { useAuthStore, useCoupleStore } from '@/store'
 import { BottomNav } from '@/components/shared/BottomNav'
+import { InvitePartnerBanner } from '@/components/shared/InvitePartnerBanner'
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog'
 import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog'
 import { QuickAddBubbles } from '@/components/expenses/QuickAddBubbles'
@@ -71,9 +72,20 @@ export const DashboardPage = () => {
     }
   }
 
+  const isPaired = session?.couple?.is_paired ?? false
+
   return (
     <div className="min-h-screen pb-32">
       <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
+        {/* Invite Partner Banner - Show when not paired */}
+        {!isPaired && (
+          <section className="flex justify-center">
+            <div className="max-w-2xl w-full">
+              <InvitePartnerBanner />
+            </div>
+          </section>
+        )}
+
         {/* Recent Transactions List - Responsive Grid */}
         {expenses.length > 0 && (
           <section className="flex justify-center">

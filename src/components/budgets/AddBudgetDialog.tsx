@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { budgetFormSchema, type BudgetFormData } from '@/types/schemas'
 import { useAuthStore } from '@/store'
-import { budgetsService } from '@/services'
+import { budgetsService, couplesService } from '@/services'
 import { DEFAULT_CATEGORIES } from '@/types'
 import {
   Dialog,
@@ -20,27 +20,21 @@ interface AddBudgetDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onBudgetAdded?: () => void
-  existingCategories?: string[]
 }
 
 export const AddBudgetDialog = ({
   open,
   onOpenChange,
-  onBudgetAdded,
-  existingCategories = []
+  onBudgetAdded
 }: AddBudgetDialogProps) => {
   const session = useAuthStore((state) => state.session)
   const { toast } = useToast()
   const [error, setError] = useState<string | null>(null)
 
-  const allCategories = session?.couple?.custom_categories || DEFAULT_CATEGORIES.map((c) => c.name)
-
-  // Filter out categories that already have budgets
-  const availableCategories = allCategories.filter(
-    (cat) => !existingCategories.includes(cat)
-  )
-
   const [categoryInput, setCategoryInput] = useState('')
+  const [selectedEmoji, setSelectedEmoji] = useState('📦')
+
+  const commonEmojis = ['💰', '🍔', '🚗', '⚡', '🎮', '🛒', '🏥', '🏠', '🐾', '📦', '✈️', '👕', '📚', '🎬', '☕']
 
   const {
     register,
@@ -55,13 +49,6 @@ export const AddBudgetDialog = ({
       limit_amount: ''
     }
   })
-
-  // Filter suggestions based on input
-  const filteredSuggestions = categoryInput
-    ? availableCategories.filter((cat) =>
-        cat.toLowerCase().includes(categoryInput.toLowerCase())
-      )
-    : availableCategories
 
   const onSubmit = async (data: BudgetFormData) => {
     try {
@@ -79,6 +66,12 @@ export const AddBudgetDialog = ({
         limitAmount
       )
 
+      // Always save emoji selection
+      await couplesService.updateCategoryEmoji(session.couple.id, data.category, selectedEmoji)
+
+      // Refresh session to get updated emoji mapping
+      await useAuthStore.getState().refreshSession()
+
       toast({
         title: 'Category created!',
         description: `$${limitAmount.toFixed(2)} limit set for ${data.category}`
@@ -86,6 +79,7 @@ export const AddBudgetDialog = ({
 
       reset()
       setCategoryInput('')
+      setSelectedEmoji('📦')
       onBudgetAdded?.()
       onOpenChange(false)
     } catch (err: any) {
@@ -97,6 +91,7 @@ export const AddBudgetDialog = ({
   const handleClose = () => {
     reset()
     setCategoryInput('')
+    setSelectedEmoji('📦')
     setError(null)
     onOpenChange(false)
   }
@@ -116,7 +111,7 @@ export const AddBudgetDialog = ({
             <Label htmlFor="category" className="text-base font-semibold">Category Name *</Label>
             <Input
               id="category"
-              placeholder="Select or type a category name..."
+              placeholder="Type a category name..."
               {...register('category')}
               value={categoryInput}
               onChange={(e) => {
@@ -130,41 +125,41 @@ export const AddBudgetDialog = ({
             {errors.category && (
               <p className="text-sm text-destructive">{errors.category.message}</p>
             )}
+          </div>
 
-            {/* Available Categories */}
-            {filteredSuggestions.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground font-medium">
-                  {categoryInput ? 'Matching categories:' : 'Available categories:'}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {filteredSuggestions.map((cat) => {
-                    const categoryData = DEFAULT_CATEGORIES.find((c) => c.name === cat)
-                    return (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => {
-                          setCategoryInput(cat)
-                          setValue('category', cat)
-                        }}
-                        className="flex items-center gap-2 px-5 py-3 text-base font-medium bg-primary/10 hover:bg-primary/20 rounded-full transition-all hover:scale-105 min-h-[44px]"
-                      >
-                        <span className="text-lg">{categoryData?.emoji || '📦'}</span>
-                        <span>{cat}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {categoryInput && !filteredSuggestions.some((cat) => cat.toLowerCase() === categoryInput.toLowerCase()) && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Plus className="h-4 w-4" />
-                <span>Create new category: "{categoryInput}"</span>
-              </div>
-            )}
+          {/* Emoji Selection - Always visible */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">Choose Icon</Label>
+            <div className="flex flex-wrap gap-2">
+              {commonEmojis.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setSelectedEmoji(emoji)}
+                  className={`w-12 h-12 rounded-lg transition-all hover:scale-110 flex items-center justify-center text-2xl ${
+                    selectedEmoji === emoji
+                      ? 'bg-primary/20 ring-2 ring-primary'
+                      : 'bg-accent hover:bg-accent/80'
+                  }`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="custom-emoji" className="text-sm text-muted-foreground">
+                Or enter custom emoji:
+              </Label>
+              <Input
+                id="custom-emoji"
+                type="text"
+                placeholder="🎯"
+                value={selectedEmoji}
+                onChange={(e) => setSelectedEmoji(e.target.value)}
+                className="w-20 h-10 text-center text-xl"
+                maxLength={2}
+              />
+            </div>
           </div>
 
           {/* Limit Amount */}

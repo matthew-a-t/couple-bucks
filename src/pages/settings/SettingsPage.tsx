@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store'
+import { couplesService } from '@/services'
 import { BottomNav } from '@/components/shared/BottomNav'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +21,7 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { User, Bell, LogOut, UserX, Copy, Check } from 'lucide-react'
+import { User, Bell, LogOut, UserX, Copy, Check, UserCheck, Users, RefreshCw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 export const SettingsPage = () => {
@@ -27,9 +29,13 @@ export const SettingsPage = () => {
   const { toast } = useToast()
 
   const [fullName, setFullName] = useState(session?.profile.full_name || '')
+  const [permissionTier, setPermissionTier] = useState<'logger' | 'manager'>(
+    session?.profile.permission_tier || 'logger'
+  )
   const [isSaving, setIsSaving] = useState(false)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const [showResetDialog, setShowResetDialog] = useState(false)
   const [inviteCodeCopied, setInviteCodeCopied] = useState(false)
 
   // Notification preferences (placeholder - would connect to push notification system)
@@ -44,7 +50,10 @@ export const SettingsPage = () => {
     if (session?.profile.full_name) {
       setFullName(session.profile.full_name)
     }
-  }, [session?.profile.full_name])
+    if (session?.profile.permission_tier) {
+      setPermissionTier(session.profile.permission_tier)
+    }
+  }, [session?.profile.full_name, session?.profile.permission_tier])
 
   const handleSaveProfile = async () => {
     if (!session?.user?.id || !fullName.trim()) {
@@ -61,7 +70,10 @@ export const SettingsPage = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName.trim() })
+        .update({
+          full_name: fullName.trim(),
+          permission_tier: permissionTier
+        })
         .eq('id', session.user.id)
 
       if (error) throw error
@@ -141,6 +153,34 @@ export const SettingsPage = () => {
     }
   }
 
+  const handleResetAccount = async () => {
+    if (!session?.couple?.id) return
+
+    try {
+      await couplesService.resetCoupleData(session.couple.id)
+
+      toast({
+        title: 'Account reset',
+        description: 'All expenses, budgets, and bills have been cleared. Starting fresh!'
+      })
+
+      // Refresh session to clear cached data
+      await useAuthStore.getState().refreshSession()
+
+      // Reload the page to reflect changes
+      window.location.reload()
+    } catch (error) {
+      console.error('Failed to reset account:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to reset account data',
+        variant: 'destructive'
+      })
+    } finally {
+      setShowResetDialog(false)
+    }
+  }
+
   return (
     <div className="min-h-screen pb-32">
       <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
@@ -177,21 +217,56 @@ export const SettingsPage = () => {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Permission Tier</Label>
-              <div className="flex items-center gap-2">
-                <Badge variant={isManager ? 'default' : 'secondary'} className="capitalize">
-                  {session?.profile.permission_tier}
-                </Badge>
-                <p className="text-sm text-muted-foreground">
-                  {isManager
-                    ? 'Full access to budgets, reports, and settings'
-                    : 'Can log expenses, view summaries, and manage bills'}
-                </p>
-              </div>
+              <RadioGroup value={permissionTier} onValueChange={(value: 'logger' | 'manager') => setPermissionTier(value)}>
+                {/* Logger Option */}
+                <div className="relative">
+                  <RadioGroupItem value="logger" id="logger-setting" className="peer sr-only" />
+                  <Label
+                    htmlFor="logger-setting"
+                    className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5"
+                  >
+                    <div className="p-2 bg-primary/10 rounded-lg mt-1">
+                      <UserCheck className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold mb-1">Logger</div>
+                      <p className="text-xs text-muted-foreground">
+                        Log expenses, view summaries, and see bills
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+
+                {/* Manager Option */}
+                <div className="relative">
+                  <RadioGroupItem value="manager" id="manager-setting" className="peer sr-only" />
+                  <Label
+                    htmlFor="manager-setting"
+                    className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-accent peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5"
+                  >
+                    <div className="p-2 bg-secondary/10 rounded-lg mt-1">
+                      <Users className="h-5 w-5 text-secondary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold mb-1">Manager</div>
+                      <p className="text-xs text-muted-foreground">
+                        Full access: create budgets, manage bills, view reports, and more
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            <Button onClick={handleSaveProfile} disabled={isSaving || fullName === session?.profile.full_name}>
+            <Button
+              onClick={handleSaveProfile}
+              disabled={
+                isSaving ||
+                (fullName === session?.profile.full_name && permissionTier === session?.profile.permission_tier)
+              }
+            >
               {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </CardContent>
@@ -244,18 +319,34 @@ export const SettingsPage = () => {
 
                 <Separator />
 
-                <div>
-                  <Button
-                    variant="destructive"
-                    onClick={() => setShowLeaveDialog(true)}
-                    className="w-full"
-                  >
-                    <UserX className="mr-2 h-4 w-4" />
-                    Leave Couple Account
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    This will unpair you from your partner. Your data will remain but you'll need to create or join a new couple.
-                  </p>
+                <div className="space-y-3">
+                  <div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowResetDialog(true)}
+                      className="w-full border-warning text-warning hover:bg-warning/10"
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Reset Account Data
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Clear all expenses, budgets, and bills. You'll stay paired with your partner and can start fresh.
+                    </p>
+                  </div>
+
+                  <div>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setShowLeaveDialog(true)}
+                      className="w-full"
+                    >
+                      <UserX className="mr-2 h-4 w-4" />
+                      Leave Couple Account
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      This will unpair you from your partner. Your data will remain but you'll need to create or join a new couple.
+                    </p>
+                  </div>
                 </div>
               </>
             ) : (
@@ -361,6 +452,25 @@ export const SettingsPage = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleLeaveCouple} className="bg-destructive text-destructive-foreground">
               Leave Couple
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Account Confirmation Dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset all account data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all expenses, budgets, and bills for both you and your partner.
+              You'll stay paired together and can start fresh with a clean slate. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetAccount} className="bg-warning text-white hover:bg-warning/90">
+              Reset Account
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

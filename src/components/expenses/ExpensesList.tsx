@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import type { ExpenseWithUser } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/types'
+import { useAuthStore } from '@/store'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +31,24 @@ export const ExpensesList = ({
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
 
   const getCategoryEmoji = (categoryName: string) => {
+    const session = useAuthStore.getState().session
+
+    // Check if user has selected a custom emoji for this category
+    const customEmojiMap = session?.couple?.custom_category_emojis || {}
+    if (customEmojiMap[categoryName]) {
+      return customEmojiMap[categoryName]
+    }
+
+    // Check custom categories by index
+    const customCategories = session?.couple?.custom_categories || []
+    if (customCategories.length > 0) {
+      const customIndex = customCategories.indexOf(categoryName)
+      if (customIndex !== -1 && DEFAULT_CATEGORIES[customIndex]) {
+        return DEFAULT_CATEGORIES[customIndex].emoji
+      }
+    }
+
+    // Fall back to DEFAULT_CATEGORIES lookup
     const category = DEFAULT_CATEGORIES.find((cat) => cat.name === categoryName)
     return category?.emoji || '📦'
   }

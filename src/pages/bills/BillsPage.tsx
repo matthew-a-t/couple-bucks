@@ -10,6 +10,7 @@ import { Plus, Calendar, AlertCircle, Clock } from 'lucide-react'
 
 export const BillsPage = () => {
   const session = useAuthStore((state) => state.session)
+  const isManager = session?.profile?.permission_tier === 'manager'
   const { bills, billsLoading, loadBills, subscribeToBills, unsubscribeFromBills } = useCoupleStore()
   const [addDialogOpen, setAddDialogOpen] = useState(false)
 
@@ -51,11 +52,15 @@ export const BillsPage = () => {
           <Card className="p-12 text-center">
             <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No bills yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">Add your first recurring bill</p>
-            <Button onClick={() => setAddDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Bill
-            </Button>
+            <p className="text-sm text-muted-foreground mb-4">
+              {isManager ? 'Add your first recurring bill' : 'Your partner hasn\'t added any bills yet'}
+            </p>
+            {isManager && (
+              <Button onClick={() => setAddDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Bill
+              </Button>
+            )}
           </Card>
         ) : (
           <>
