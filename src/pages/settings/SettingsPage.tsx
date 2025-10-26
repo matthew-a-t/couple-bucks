@@ -415,7 +415,7 @@ export const SettingsPage = () => {
             </Button>
 
             <p className="text-xs text-muted-foreground text-center">
-              Couple Bucks v0.1.0 • Made with ❤️ for couples
+              Couple Bucks v0.2.0 • Made with ❤️ for couples
             </p>
           </CardContent>
         </Card>
