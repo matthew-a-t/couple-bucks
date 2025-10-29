@@ -9,12 +9,14 @@ export interface Category {
   color?: string
 }
 
+// Maximum number of categories allowed per couple
+export const MAX_CATEGORIES = 20
+
 // Default predefined categories
 export const DEFAULT_CATEGORIES: Category[] = [
   { name: 'Groceries', emoji: '🛒', color: '#48bb78' },
   { name: 'Dining Out', emoji: '🍽️', color: '#f56565' },
   { name: 'Transportation', emoji: '🚗', color: '#4299e1' },
-  { name: 'Utilities', emoji: '💡', color: '#ecc94b' },
   { name: 'Entertainment', emoji: '🎬', color: '#a78bfa' },
   { name: 'Shopping', emoji: '🛍️', color: '#667eea' },
   { name: 'Healthcare', emoji: '🏥', color: '#f56565' },
@@ -28,6 +30,10 @@ export interface OnboardingSurvey {
   accountType: 'joint' | 'separate' | 'mixed'
   splitMethod: 'fifty_fifty' | 'proportional' | 'custom' | 'single_payer'
   trackIncome: boolean
+  user1Income?: number
+  user1IncomeFrequency?: 'weekly' | 'biweekly' | 'monthly'
+  user2Income?: number
+  user2IncomeFrequency?: 'weekly' | 'biweekly' | 'monthly'
 }
 
 // Expense with user info (for display)
@@ -57,7 +63,10 @@ export interface BudgetWithProgress {
   remaining: number
   percentage: number
   status: 'success' | 'warning' | 'error' // green, yellow, red
-  last_reset_at: string
+  period_type: 'monthly'
+  period_start_date: string // ISO date string (YYYY-MM-DD)
+  auto_reset_enabled: boolean
+  last_reset_at: string // Deprecated, use period_start_date
   created_at: string
   updated_at: string
 }

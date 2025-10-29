@@ -166,8 +166,9 @@ npm run format   # Format code with Prettier
 ### Service Layer Pattern
 All database operations MUST go through service layers in `/src/services/`:
 - `expenses.ts` - All expense CRUD operations
-- `budgets.ts` - All budget operations
+- `budgets.ts` - All budget operations, monthly reset, and history tracking
 - `bills.ts` - All bill operations
+- `income.ts` - Income tracking and proportional split calculations
 - `auth.ts` - Authentication logic
 
 **Critical**: Never call Supabase directly from components. Always use service layer abstractions to enable future API integrations (Plaid, bank connections) without refactoring components.
@@ -197,7 +198,9 @@ Components must check permission tier and render appropriate UI. Use progressive
 - **users**: profiles, permission tiers, preferences
 - **couples**: pair relationship (exactly 2 users), financial settings, custom categories
 - **expenses**: transactions with split info (50/50, custom %, single-payer)
-- **budgets**: ongoing spending limits (NO time periods), color-coded progress
+- **budgets**: monthly auto-reset spending limits with history tracking, color-coded progress
+- **budget_history**: archived budget periods for trend analysis and reporting
+- **incomes**: user income sources for proportional expense splits
 - **bills**: recurring bills with reminders
 
 **Row Level Security (RLS)**: ALL tables must enforce RLS policies to ensure users only access their couple's data.
@@ -288,9 +291,18 @@ ALL expenses are splitable by default. Options:
 Default split is configured during onboarding survey.
 
 ### Budget Structure
-- Budgets are **ongoing spending limits** (NO monthly/time periods)
+- Budgets are **monthly auto-reset spending limits** with full history tracking
+- Budgets automatically reset on the 1st of each month (client-side check when budgets page is accessed)
+- Budget history is archived before each reset for trend analysis and reporting
 - 10 predefined categories (editable): Groceries, Dining Out, Transportation, Utilities, Entertainment, Shopping, Healthcare, Household, Pets, Other
-- Each budget shows: limit, spent, remaining, progress bar with color indicator
+- Each budget shows: limit, spent, remaining, progress bar with color indicator, current period (month/year)
+
+### Income Tracking
+- Users can optionally track income during onboarding or later in settings
+- Income is used to calculate proportional expense splits based on earnings ratio
+- Multiple income sources supported (salary, freelance, etc.) with different frequencies (weekly, biweekly, monthly)
+- Income data is normalized to monthly amounts for split calculations
+- Without income tracking, proportional splits default to 50/50
 
 ### Bills vs Expenses
 Bills are SEPARATE from expenses:

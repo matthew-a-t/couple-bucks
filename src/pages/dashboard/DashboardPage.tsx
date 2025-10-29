@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useCoupleStore } from '@/store'
 import { BottomNav } from '@/components/shared/BottomNav'
 import { InvitePartnerBanner } from '@/components/shared/InvitePartnerBanner'
@@ -10,6 +11,7 @@ import { Plus } from 'lucide-react'
 import type { ExpenseWithUser } from '@/types'
 
 export const DashboardPage = () => {
+  const navigate = useNavigate()
   const { session } = useAuthStore()
   const {
     expenses,
@@ -22,6 +24,13 @@ export const DashboardPage = () => {
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithUser | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
   const [transactionCount, setTransactionCount] = useState(3)
+
+  // Redirect to onboarding if user doesn't have a couple
+  useEffect(() => {
+    if (session && !session.profile.couple_id) {
+      navigate('/onboarding', { replace: true })
+    }
+  }, [session, navigate])
 
   useEffect(() => {
     if (session?.couple?.id) {

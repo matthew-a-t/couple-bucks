@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, useCoupleStore } from '@/store'
 import { AddBudgetDialog } from '@/components/budgets/AddBudgetDialog'
 import { BudgetCard } from '@/components/budgets/BudgetCard'
+import { IncomeOverviewCard } from '@/components/budgets/IncomeOverviewCard'
+import { MonthNavigator } from '@/components/budgets/MonthNavigator'
 import { ExpensesList } from '@/components/expenses/ExpensesList'
 import { ExpenseDetailDialog } from '@/components/expenses/ExpenseDetailDialog'
 import { BottomNav } from '@/components/shared/BottomNav'
@@ -12,7 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, PiggyBank, TrendingUp, Search, Calendar } from 'lucide-react'
-import { DEFAULT_CATEGORIES } from '@/types'
+import { DEFAULT_CATEGORIES, MAX_CATEGORIES } from '@/types'
+import type { BudgetWithProgress } from '@/types'
+import type { Expense } from '@/types/database'
 
 export const BudgetsPage = () => {
   const location = useLocation()
@@ -31,6 +35,14 @@ export const BudgetsPage = () => {
     unsubscribeFromExpenses
   } = useCoupleStore()
 
+  // Month navigation state
+  const now = new Date()
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth())
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear())
+  const [monthBudgets, setMonthBudgets] = useState<BudgetWithProgress[]>([])
+  const [monthExpenses, setMonthExpenses] = useState<Expense[]>([])
+  const [monthDataLoading, setMonthDataLoading] = useState(false)
+
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState<string>('all')
@@ -38,8 +50,25 @@ export const BudgetsPage = () => {
   const [selectedExpense, setSelectedExpense] = useState<any>(null)
   const [expenseDetailOpen, setExpenseDetailOpen] = useState(false)
 
+  const isCurrentMonth = selectedMonth === now.getMonth() && selectedYear === now.getFullYear()
+
+  // Load current budgets and expenses (for real-time updates)
   useEffect(() => {
     if (session?.couple?.id) {
+      // Check and reset monthly budgets if needed (happens automatically client-side)
+      const checkAndResetBudgets = async () => {
+        try {
+          const { budgetsService } = await import('@/services/budgets')
+          const wasReset = await budgetsService.checkAndResetMonthlyBudgets(session.couple!.id)
+          if (wasReset) {
+            console.log('Monthly budgets were automatically reset')
+          }
+        } catch (error) {
+          console.error('Failed to check/reset monthly budgets:', error)
+        }
+      }
+
+      checkAndResetBudgets()
       loadBudgets(session.couple.id)
       subscribeToBudgets(session.couple.id)
       loadExpenses(session.couple.id)
@@ -52,11 +81,58 @@ export const BudgetsPage = () => {
     }
   }, [session?.couple?.id])
 
+  // Load month-specific data when month changes
+  useEffect(() => {
+    if (session?.couple?.id) {
+      const loadMonthData = async () => {
+        setMonthDataLoading(true)
+        try {
+          const { budgetsService } = await import('@/services/budgets')
+
+          // Fetch budgets for selected month
+          const budgetsData = await budgetsService.getBudgetsForMonth(
+            session.couple!.id,
+            selectedMonth,
+            selectedYear
+          )
+          setMonthBudgets(budgetsData)
+
+          // Fetch expenses for selected month
+          const expensesData = await budgetsService.getExpensesForMonth(
+            session.couple!.id,
+            selectedMonth,
+            selectedYear
+          )
+          setMonthExpenses(expensesData)
+        } catch (error) {
+          console.error('Failed to load month data:', error)
+        } finally {
+          setMonthDataLoading(false)
+        }
+      }
+
+      loadMonthData()
+    }
+  }, [session?.couple?.id, selectedMonth, selectedYear])
+
+  // Update month data when current month budgets/expenses change (real-time updates)
+  useEffect(() => {
+    if (isCurrentMonth) {
+      setMonthBudgets(budgets)
+      setMonthExpenses(expenses)
+    }
+  }, [budgets, expenses, isCurrentMonth])
+
+  const handleMonthChange = (month: number, year: number) => {
+    setSelectedMonth(month)
+    setSelectedYear(year)
+  }
+
   // Check for selected expense from navigation state
   useEffect(() => {
     const state = location.state as { selectedExpenseId?: string }
-    if (state?.selectedExpenseId && expenses.length > 0) {
-      const expense = expenses.find((e) => e.id === state.selectedExpenseId)
+    if (state?.selectedExpenseId && monthExpenses.length > 0) {
+      const expense = monthExpenses.find((e) => e.id === state.selectedExpenseId)
       if (expense) {
         setSelectedExpense(expense)
         setExpenseDetailOpen(true)
@@ -64,7 +140,7 @@ export const BudgetsPage = () => {
         navigate(location.pathname, { replace: true })
       }
     }
-  }, [location.state, expenses, navigate, location.pathname])
+  }, [location.state, monthExpenses, navigate, location.pathname])
 
   const handleBudgetAdded = async () => {
     if (session?.couple?.id) {
@@ -92,54 +168,56 @@ export const BudgetsPage = () => {
     }
   }
 
-  // Calculate totals
-  const totalBudgeted = budgets.reduce((sum, b) => sum + b.limit_amount, 0)
-  const totalSpent = budgets.reduce((sum, b) => sum + b.current_spent, 0)
+  // Calculate totals for selected month
+  const totalBudgeted = monthBudgets.reduce((sum, b) => sum + b.limit_amount, 0)
+  const totalSpent = monthBudgets.reduce((sum, b) => sum + b.current_spent, 0)
 
-  // Create placeholder budgets for default categories that don't have budgets yet
-  const defaultCategoryBudgets = DEFAULT_CATEGORIES.map((cat) => {
-    const existingBudget = budgets.find((b) => b.category === cat.name)
-    if (existingBudget) return null
+  // Create placeholder budgets for default categories that don't have budgets yet (only for current month)
+  const defaultCategoryBudgets = isCurrentMonth
+    ? DEFAULT_CATEGORIES.map((cat) => {
+        const existingBudget = monthBudgets.find((b) => b.category === cat.name)
+        if (existingBudget) return null
 
-    // Get start of current month
-    const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        // Get start of selected month
+        const startOfMonth = new Date(selectedYear, selectedMonth, 1)
 
-    // Calculate current spending for this category (current month only)
-    const categoryExpenses = expenses.filter((e) => {
-      const expenseDate = new Date(e.created_at)
-      return e.category === cat.name && expenseDate >= startOfMonth
-    })
-    const currentSpent = categoryExpenses.reduce((sum, e) => sum + Number(e.amount), 0)
+        // Calculate spending for this category in selected month
+        const categoryExpenses = monthExpenses.filter((e) => {
+          return e.category === cat.name
+        })
+        const currentSpent = categoryExpenses.reduce((sum, e) => sum + Number(e.amount), 0)
 
-    return {
-      id: `placeholder-${cat.name}`,
-      couple_id: session?.couple?.id || '',
-      category: cat.name,
-      limit_amount: 0,
-      current_spent: currentSpent,
-      remaining: -currentSpent,
-      percentage: 0,
-      status: 'success' as const,
-      last_reset_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      isPlaceholder: true
-    }
-  }).filter((budget): budget is NonNullable<typeof budget> => budget !== null)
+        return {
+          id: `placeholder-${cat.name}`,
+          couple_id: session?.couple?.id || '',
+          category: cat.name,
+          limit_amount: 0,
+          current_spent: currentSpent,
+          remaining: -currentSpent,
+          percentage: 0,
+          status: 'success' as const,
+          period_type: 'monthly' as const,
+          period_start_date: startOfMonth.toISOString().split('T')[0],
+          auto_reset_enabled: true,
+          last_reset_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          isPlaceholder: true
+        }
+      }).filter((budget): budget is NonNullable<typeof budget> => budget !== null)
+    : []
 
   // Combine real budgets with placeholder budgets
-  const allBudgets = [...budgets, ...defaultCategoryBudgets]
+  const allBudgets = [...monthBudgets, ...defaultCategoryBudgets]
 
-  // Filter expenses
-  const filteredExpenses = expenses.filter((expense) => {
+  // Filter expenses for selected month
+  const filteredExpenses = monthExpenses.filter((expense) => {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       const matchesSearch =
         expense.category.toLowerCase().includes(query) ||
-        expense.description?.toLowerCase().includes(query) ||
-        expense.created_by_name?.toLowerCase().includes(query)
+        expense.description?.toLowerCase().includes(query)
 
       if (!matchesSearch) return false
     }
@@ -149,8 +227,8 @@ export const BudgetsPage = () => {
       return false
     }
 
-    // Period filter
-    if (filterPeriod !== 'all') {
+    // Period filter - only applies for current month view
+    if (filterPeriod !== 'all' && isCurrentMonth) {
       const expenseDate = new Date(expense.created_at)
       const now = new Date()
 
@@ -176,20 +254,36 @@ export const BudgetsPage = () => {
   return (
     <div className="min-h-screen pb-32">
       <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
+        {/* Month Navigator */}
+        <MonthNavigator
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          onMonthChange={handleMonthChange}
+        />
+
         {/* Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2">
-          <Card className="border-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Allocated</CardTitle>
-              <PiggyBank className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${totalBudgeted.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                Across {budgets.length} categor{budgets.length !== 1 ? 'ies' : 'y'}
-              </p>
-            </CardContent>
-          </Card>
+          {/* Show consolidated Budget & Income card if income tracking is enabled (only for current month) */}
+          {session?.couple?.track_income && session?.couple?.id && isCurrentMonth ? (
+            <IncomeOverviewCard
+              coupleId={session.couple.id}
+              totalBudgeted={totalBudgeted}
+              budgetCount={monthBudgets.length}
+            />
+          ) : (
+            <Card className="border-0">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Allocated</CardTitle>
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${totalBudgeted.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Across {monthBudgets.length} categor{monthBudgets.length !== 1 ? 'ies' : 'y'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -209,7 +303,13 @@ export const BudgetsPage = () => {
 
         {/* Budget Categories */}
         <div>
-          {budgetsLoading && expenses.length === 0 ? (
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Budget Categories</h2>
+            <span className="text-sm text-muted-foreground">
+              {categories.length}/{MAX_CATEGORIES} categories
+            </span>
+          </div>
+          {monthDataLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(3)].map((_, i) => (
                 <Card key={i} className="border-0">
@@ -238,36 +338,39 @@ export const BudgetsPage = () => {
                     budget={budget}
                     onBudgetUpdated={handleBudgetUpdated}
                     onBudgetDeleted={handleBudgetUpdated}
+                    readOnly={!isCurrentMonth}
                   />
                 ))}
 
-                {/* Add New Category Card */}
-                <Card className="transition-all hover:shadow-lg border-dashed border-2 cursor-pointer hover:border-primary/70 hover:scale-105 active:scale-95"
-                  onClick={() => setAddDialogOpen(true)}>
-                  <CardHeader className="pb-2 py-3">
-                    <div className="flex items-center justify-center min-h-[80px]">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center transition-colors">
-                        <Plus className="h-6 w-6 text-primary" />
+                {/* Add New Category Card (only show for current month) */}
+                {isCurrentMonth && categories.length < MAX_CATEGORIES && (
+                  <Card className="transition-all hover:shadow-lg border-dashed border-2 cursor-pointer hover:border-primary/70 hover:scale-105 active:scale-95"
+                    onClick={() => setAddDialogOpen(true)}>
+                    <CardHeader className="pb-2 py-3">
+                      <div className="flex items-center justify-center min-h-[80px]">
+                        <div className="w-12 h-12 rounded-full bg-primary/20 hover:bg-primary/30 flex items-center justify-center transition-colors">
+                          <Plus className="h-6 w-6 text-primary" />
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
+                    </CardHeader>
+                  </Card>
+                )}
               </div>
             </>
           )}
         </div>
 
-        {/* Recent Expenses */}
+        {/* Expenses for Selected Month */}
         <Card className="border-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
-              Recent Expenses
+              {isCurrentMonth ? 'Recent Expenses' : 'Expenses for Selected Month'}
             </CardTitle>
             <CardDescription>
-              {filteredExpenses.length === expenses.length
-                ? 'All your expenses'
-                : `Filtered results (${filteredExpenses.length} of ${expenses.length})`}
+              {filteredExpenses.length === monthExpenses.length
+                ? `All expenses for this month`
+                : `Filtered results (${filteredExpenses.length} of ${monthExpenses.length})`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -285,7 +388,7 @@ export const BudgetsPage = () => {
               </div>
 
               {/* Category and Period Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className={`grid gap-4 ${isCurrentMonth ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Category</label>
                   <Select value={filterCategory} onValueChange={setFilterCategory}>
@@ -303,20 +406,23 @@ export const BudgetsPage = () => {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Time Period</label>
-                  <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">Last 7 Days</SelectItem>
-                      <SelectItem value="month">Last 30 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Period filter only shows for current month */}
+                {isCurrentMonth && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Time Period</label>
+                    <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="week">Last 7 Days</SelectItem>
+                        <SelectItem value="month">Last 30 Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               {/* Results count */}
@@ -343,10 +449,11 @@ export const BudgetsPage = () => {
             {/* Expenses List */}
             <ExpensesList
               expenses={filteredExpenses}
-              loading={expensesLoading}
+              loading={monthDataLoading}
               error={null}
               onExpenseUpdated={handleExpenseUpdated}
               onExpenseDeleted={handleExpenseUpdated}
+              readOnly={!isCurrentMonth}
             />
           </CardContent>
         </Card>

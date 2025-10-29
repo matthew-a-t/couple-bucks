@@ -5,8 +5,19 @@ import { couplesService } from '@/services'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Copy, Check, RefreshCw, UserCheck } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
+import { Loader2, Copy, Check, RefreshCw, UserCheck, Link as LinkIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase'
 import type { Couple } from '@/types/database'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
@@ -19,6 +30,7 @@ export const WaitingForPartnerPage = () => {
   const [copied, setCopied] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [isChecking, setIsChecking] = useState(false)
+  const [showJoinInsteadDialog, setShowJoinInsteadDialog] = useState(false)
 
   useEffect(() => {
     // Load invite code
@@ -155,6 +167,36 @@ export const WaitingForPartnerPage = () => {
     } else {
       // Fallback: copy to clipboard
       await copyInviteCode()
+    }
+  }
+
+  const handleJoinInstead = async () => {
+    try {
+      if (!session?.user?.id) return
+
+      // Leave current couple (remove couple_id from profile)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ couple_id: null })
+        .eq('id', session.user.id)
+
+      if (error) throw error
+
+      toast({
+        title: 'Switched to join mode',
+        description: 'Enter your partner\'s invite code to join their couple'
+      })
+
+      // Refresh session and redirect to onboarding landing
+      await refreshSession()
+      navigate('/onboarding')
+    } catch (error: any) {
+      console.error('Failed to switch to join mode:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to switch mode. Please try again.',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -315,6 +357,21 @@ export const WaitingForPartnerPage = () => {
                   Continue to dashboard
                 </Button>
               </div>
+
+              {/* Join partner instead option */}
+              <div className="text-center pt-2">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Already have a partner's invite code?
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowJoinInsteadDialog(true)}
+                  className="text-sm"
+                >
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                  Join partner instead
+                </Button>
+              </div>
             </>
           ) : (
             <div className="text-center py-8">
@@ -324,6 +381,24 @@ export const WaitingForPartnerPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showJoinInsteadDialog} onOpenChange={setShowJoinInsteadDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Join your partner's couple?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will cancel your current setup and let you join your partner's couple using their invite code instead. Your survey answers will be discarded.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep waiting</AlertDialogCancel>
+            <AlertDialogAction onClick={handleJoinInstead}>
+              Join partner instead
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

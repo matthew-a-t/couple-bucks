@@ -18,6 +18,7 @@ interface ExpensesListProps {
   error?: string | null
   onExpenseUpdated?: () => void
   onExpenseDeleted?: () => void
+  readOnly?: boolean
 }
 
 export const ExpensesList = ({
@@ -25,7 +26,8 @@ export const ExpensesList = ({
   loading,
   error,
   onExpenseUpdated,
-  onExpenseDeleted
+  onExpenseDeleted,
+  readOnly = false
 }: ExpensesListProps) => {
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithUser | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
@@ -65,8 +67,11 @@ export const ExpensesList = ({
   }
 
   const handleExpenseClick = (expense: ExpenseWithUser) => {
-    setSelectedExpense(expense)
-    setDetailDialogOpen(true)
+    // Only allow clicking if not in read-only mode
+    if (!readOnly) {
+      setSelectedExpense(expense)
+      setDetailDialogOpen(true)
+    }
   }
 
   const handleDialogClose = () => {
@@ -160,7 +165,10 @@ export const ExpensesList = ({
                   <Card
                     key={expense.id}
                     className={cn(
-                      'p-4 cursor-pointer transition-all hover:shadow-md hover:border-primary/50'
+                      'p-4 transition-all',
+                      readOnly
+                        ? 'opacity-90'
+                        : 'cursor-pointer hover:shadow-md hover:border-primary/50'
                     )}
                     onClick={() => handleExpenseClick(expense)}
                   >

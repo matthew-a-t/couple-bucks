@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, UserPlus } from 'lucide-react'
+import { OnboardingProgress } from '@/components/shared/OnboardingProgress'
 
 export const CoupleSetupPage = () => {
   const navigate = useNavigate()
@@ -50,11 +51,7 @@ export const CoupleSetupPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <div className="mb-4">
-            <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">4</span>
-            </div>
-          </div>
+          <OnboardingProgress currentStep={4} totalSteps={4} />
           <CardTitle className="text-2xl">Almost done!</CardTitle>
           <CardDescription>
             Let's create your couple account and get your invite code

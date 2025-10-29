@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import type { Expense, ExpenseInsert, ExpenseUpdate, SplitType } from '@/types/database'
 import type { ExpenseWithUser } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/types'
+import { incomeService } from './income'
 
 /**
  * Expenses Service
@@ -93,10 +94,17 @@ export const expensesService = {
         }
         break
       case 'proportional':
-        // For proportional, you would get income from profiles and calculate
-        // For now, default to 50/50 - can be enhanced later
-        splitPercentageUser1 = 50
-        splitPercentageUser2 = 50
+        // Calculate split based on actual income data
+        try {
+          const split = await incomeService.calculateProportionalSplit(coupleId)
+          splitPercentageUser1 = split.user1Percentage
+          splitPercentageUser2 = split.user2Percentage
+        } catch (error) {
+          // If income calculation fails, default to 50/50
+          console.warn('Failed to calculate proportional split, defaulting to 50/50:', error)
+          splitPercentageUser1 = 50
+          splitPercentageUser2 = 50
+        }
         break
     }
 

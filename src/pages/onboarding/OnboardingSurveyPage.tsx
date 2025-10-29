@@ -9,10 +9,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowRight } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import { couplesService } from '@/services'
-import type { AccountType, SplitType } from '@/types/database'
+import { incomeService } from '@/services/income'
+import type { AccountType, SplitType, IncomeFrequency } from '@/types/database'
+import { OnboardingProgress } from '@/components/shared/OnboardingProgress'
 
 export const OnboardingSurveyPage = () => {
   const navigate = useNavigate()
@@ -21,6 +25,7 @@ export const OnboardingSurveyPage = () => {
 
   const {
     handleSubmit,
+    register,
     watch,
     setValue,
     formState: { errors, isSubmitting }
@@ -29,11 +34,15 @@ export const OnboardingSurveyPage = () => {
     defaultValues: {
       accountType: (session?.couple?.account_type as AccountType) || 'joint',
       splitMethod: (session?.couple?.default_split_type as SplitType) || 'fifty_fifty',
-      trackIncome: session?.couple?.track_income ?? false
+      trackIncome: session?.couple?.track_income ?? false,
+      user1IncomeFrequency: 'monthly',
+      user2IncomeFrequency: 'monthly'
     }
   })
 
   const trackIncome = watch('trackIncome')
+  const splitMethod = watch('splitMethod')
+  const accountType = watch('accountType')
 
   const onSubmit: SubmitHandler<OnboardingSurveyData> = async (data) => {
     try {
@@ -65,6 +74,21 @@ export const OnboardingSurveyPage = () => {
       // Refresh session to get updated couple data
       await refreshSession()
 
+      // Create income record if income tracking is enabled
+      if (data.trackIncome && session?.couple?.id && data.user1Income && data.user1IncomeFrequency) {
+        const amount = parseFloat(data.user1Income)
+        if (!isNaN(amount) && amount > 0) {
+          await incomeService.createIncome({
+            profile_id: session.user.id,
+            couple_id: session.couple.id,
+            amount,
+            frequency: data.user1IncomeFrequency as IncomeFrequency,
+            source_name: 'Primary Income',
+            is_primary: true
+          })
+        }
+      }
+
       // Navigate to permission tier selection
       navigate('/onboarding/permission')
     } catch (err: any) {
@@ -77,11 +101,7 @@ export const OnboardingSurveyPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <div className="mb-4">
-            <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">1</span>
-            </div>
-          </div>
+          <OnboardingProgress currentStep={1} totalSteps={4} />
           <CardTitle className="text-2xl">Let's set up your finances</CardTitle>
           <CardDescription>
             Answer a few questions so we can customize Couple Bucks for you.
@@ -102,6 +122,7 @@ export const OnboardingSurveyPage = () => {
                 1. How do you manage finances?
               </Label>
               <RadioGroup
+                value={accountType}
                 onValueChange={(value) => setValue('accountType', value as any)}
                 className="space-y-3"
               >
@@ -146,6 +167,7 @@ export const OnboardingSurveyPage = () => {
                 2. How do you split expenses?
               </Label>
               <RadioGroup
+                value={splitMethod}
                 onValueChange={(value) => setValue('splitMethod', value as any)}
                 className="space-y-3"
               >
@@ -206,12 +228,61 @@ export const OnboardingSurveyPage = () => {
                   onCheckedChange={(checked) => setValue('trackIncome', checked as boolean)}
                 />
                 <Label htmlFor="trackIncome" className="cursor-pointer flex-1">
-                  <div className="font-medium">Yes, track both partner incomes</div>
+                  <div className="font-medium">Yes, enable income tracking</div>
                   <div className="text-sm text-muted-foreground">
-                    Useful for proportional splits and financial planning
+                    {splitMethod === 'proportional'
+                      ? 'Required for proportional splits. Each partner can independently track their own income.'
+                      : 'Each partner can independently track their own income for better financial insights'}
                   </div>
                 </Label>
               </div>
+
+              {/* Income input fields - show when trackIncome is true */}
+              {trackIncome && (
+                <div className="ml-4 space-y-4 pt-4 border-l-2 border-primary pl-4">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Your income (optional)</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="user1Income" className="text-xs text-muted-foreground">
+                          Amount
+                        </Label>
+                        <Input
+                          id="user1Income"
+                          type="number"
+                          placeholder="0"
+                          {...register('user1Income')}
+                          className={errors.user1Income ? 'border-destructive' : ''}
+                        />
+                        {errors.user1Income && (
+                          <p className="text-xs text-destructive">{errors.user1Income.message}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="user1IncomeFrequency" className="text-xs text-muted-foreground">
+                          Frequency
+                        </Label>
+                        <Select
+                          defaultValue="monthly"
+                          onValueChange={(value) => setValue('user1IncomeFrequency', value as any)}
+                        >
+                          <SelectTrigger id="user1IncomeFrequency">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      💡 You can skip this for now and add it later. Your partner will also be able to independently add their own income in settings.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>

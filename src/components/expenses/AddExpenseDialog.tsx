@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { expenseFormSchema, type ExpenseFormData } from '@/types/schemas'
 import { useAuthStore, useCoupleStore } from '@/store'
 import { expensesService, budgetsService } from '@/services'
+import { incomeService } from '@/services/income'
 import { DEFAULT_CATEGORIES } from '@/types'
 import {
   Dialog,
@@ -37,6 +38,7 @@ export const AddExpenseDialog = ({
   const { toast } = useToast()
   const [error, setError] = useState<string | null>(null)
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [proportionalSplit, setProportionalSplit] = useState<{ user1: number; user2: number } | null>(null)
 
   // Use budget categories by default, fallback to custom categories, then DEFAULT_CATEGORIES
   const budgetCategories = budgets.map((b) => b.category)
@@ -71,6 +73,32 @@ export const AddExpenseDialog = ({
       setValue('category', defaultCategory)
     }
   }, [open, defaultCategory, setValue])
+
+  // Fetch proportional split when dialog opens if income tracking is enabled
+  useEffect(() => {
+    const fetchProportionalSplit = async () => {
+      if (open && session?.couple?.track_income && session?.profile?.couple_id) {
+        try {
+          const split = await incomeService.calculateProportionalSplit(session.profile.couple_id)
+
+          // Determine which percentage belongs to current user
+          const coupleData = await incomeService.getCoupleIncomes(session.profile.couple_id)
+          const isUser1 = coupleData.couple.user1_id === session.user?.id
+
+          setProportionalSplit({
+            user1: isUser1 ? split.user1Percentage : split.user2Percentage,
+            user2: isUser1 ? split.user2Percentage : split.user1Percentage
+          })
+        } catch (error) {
+          console.error('Failed to fetch proportional split:', error)
+          // Default to 50/50 if fetch fails
+          setProportionalSplit({ user1: 50, user2: 50 })
+        }
+      }
+    }
+
+    fetchProportionalSplit()
+  }, [open, session?.couple?.track_income, session?.profile?.couple_id, session?.user?.id])
 
   const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -230,6 +258,19 @@ export const AddExpenseDialog = ({
                   50/50 Split
                 </Label>
               </div>
+
+              {/* Proportional Split - Show if income tracking is enabled */}
+              {session?.couple?.track_income && proportionalSplit && (
+                <div className="flex items-center space-x-3 p-5 border-2 rounded-2xl hover:bg-accent/50 hover:border-primary/50 transition-all cursor-pointer min-h-[56px]">
+                  <RadioGroupItem value="proportional" id="proportional" className="w-5 h-5" />
+                  <Label htmlFor="proportional" className="flex-1 cursor-pointer">
+                    <div className="text-base font-medium">Proportional to Income</div>
+                    <div className="text-sm text-muted-foreground">
+                      You: {proportionalSplit.user1}% • Partner: {proportionalSplit.user2}%
+                    </div>
+                  </Label>
+                </div>
+              )}
 
               <div className="flex items-center space-x-3 p-5 border-2 rounded-2xl hover:bg-accent/50 hover:border-primary/50 transition-all min-h-[56px]">
                 <RadioGroupItem value="custom" id="custom" className="w-5 h-5" />

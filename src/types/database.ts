@@ -5,6 +5,8 @@ export type PermissionTier = 'logger' | 'manager'
 export type SplitType = 'fifty_fifty' | 'proportional' | 'custom' | 'single_payer'
 export type AccountType = 'joint' | 'separate' | 'mixed'
 export type BillFrequency = 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'custom'
+export type IncomeFrequency = 'weekly' | 'biweekly' | 'monthly'
+export type BudgetPeriodType = 'monthly'
 export type SurveyStatus = 'draft' | 'pending_review' | 'approved'
 
 export interface Profile {
@@ -92,9 +94,14 @@ export interface Budget {
   category: string
   limit_amount: number
 
-  // Current period tracking
+  // Period tracking
+  period_type: BudgetPeriodType
+  period_start_date: string // ISO date string (YYYY-MM-DD)
+  auto_reset_enabled: boolean
+
+  // Current period tracking (calculated or denormalized)
   current_spent: number
-  last_reset_at: string
+  last_reset_at: string // Kept for backward compatibility, use period_start_date instead
 
   created_at: string
   updated_at: string
@@ -130,12 +137,50 @@ export interface Bill {
   updated_at: string
 }
 
+export interface Income {
+  id: string
+  profile_id: string
+  couple_id: string
+
+  // Income details
+  amount: number
+  source_name: string
+  frequency: IncomeFrequency
+  is_primary: boolean
+
+  created_at: string
+  updated_at: string
+}
+
+export interface BudgetHistory {
+  id: string
+  budget_id: string
+  couple_id: string
+
+  // Period information
+  period_start: string // ISO date string (YYYY-MM-DD)
+  period_end: string // ISO date string (YYYY-MM-DD)
+
+  // Budget snapshot
+  category: string
+  limit_amount: number
+  total_spent: number
+  expenses_count: number
+
+  // Status at period end
+  status: 'success' | 'warning' | 'error'
+
+  created_at: string
+}
+
 // Insert types (for creating new records)
 export type ProfileInsert = Omit<Profile, 'id' | 'created_at' | 'updated_at'>
 export type CoupleInsert = Omit<Couple, 'id' | 'created_at' | 'updated_at'>
 export type ExpenseInsert = Omit<Expense, 'id' | 'created_at' | 'updated_at'>
 export type BudgetInsert = Omit<Budget, 'id' | 'created_at' | 'updated_at'>
 export type BillInsert = Omit<Bill, 'id' | 'created_at' | 'updated_at'>
+export type IncomeInsert = Omit<Income, 'id' | 'created_at' | 'updated_at'>
+export type BudgetHistoryInsert = Omit<BudgetHistory, 'id' | 'created_at'>
 
 // Update types (for updating records, all fields optional except id)
 export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>
@@ -143,3 +188,4 @@ export type CoupleUpdate = Partial<Omit<Couple, 'id' | 'created_at' | 'updated_a
 export type ExpenseUpdate = Partial<Omit<Expense, 'id' | 'created_at' | 'updated_at'>>
 export type BudgetUpdate = Partial<Omit<Budget, 'id' | 'created_at' | 'updated_at'>>
 export type BillUpdate = Partial<Omit<Bill, 'id' | 'created_at' | 'updated_at'>>
+export type IncomeUpdate = Partial<Omit<Income, 'id' | 'created_at' | 'updated_at'>>

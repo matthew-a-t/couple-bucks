@@ -19,16 +19,17 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Trash2, TrendingUp, AlertTriangle, Edit3, Check, X, Plus } from 'lucide-react'
+import { Trash2, TrendingUp, AlertTriangle, Edit3, Check, X, Plus, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BudgetCardProps {
   budget: BudgetWithProgress & { isPlaceholder?: boolean }
   onBudgetUpdated?: () => void
   onBudgetDeleted?: () => void
+  readOnly?: boolean
 }
 
-export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetCardProps) => {
+export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted, readOnly = false }: BudgetCardProps) => {
   const { toast } = useToast()
   const session = useAuthStore((state) => state.session)
 
@@ -56,6 +57,13 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
   }
 
   const commonEmojis = ['💰', '🍔', '🚗', '⚡', '🎮', '🛒', '🏥', '🏠', '🐾', '📦', '✈️', '👕', '📚', '🎬', '☕']
+
+  // Helper function to format the budget period (e.g., "November 2025")
+  const formatPeriod = (periodStartDate?: string) => {
+    if (!periodStartDate) return null
+    const date = new Date(periodStartDate + 'T00:00:00') // Ensure UTC date parsing
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
 
   const [isEditing, setIsEditing] = useState(false)
   const [isSettingLimit, setIsSettingLimit] = useState(false)
@@ -540,20 +548,32 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted }: BudgetC
             </div>
           ) : (
             // Display Mode
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{getCategoryEmoji(budget.category)}</span>
-                <div>
-                  <h3 className="font-semibold text-sm">{budget.category}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    ${budget.current_spent.toFixed(2)} of ${budget.limit_amount.toFixed(2)}
-                  </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{getCategoryEmoji(budget.category)}</span>
+                  <div>
+                    <h3 className="font-semibold text-sm">{budget.category}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      ${budget.current_spent.toFixed(2)} of ${budget.limit_amount.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
+
+                {!readOnly && (
+                  <Button variant="ghost" size="icon" onClick={handleEdit}>
+                    <Edit3 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
               </div>
 
-              <Button variant="ghost" size="icon" onClick={handleEdit}>
-                <Edit3 className="h-3.5 w-3.5" />
-              </Button>
+              {/* Period display */}
+              {budget.period_start_date && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  <span>{formatPeriod(budget.period_start_date)}</span>
+                </div>
+              )}
             </div>
           )}
         </CardHeader>

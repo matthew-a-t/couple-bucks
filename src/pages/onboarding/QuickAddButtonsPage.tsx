@@ -9,6 +9,7 @@ import { ArrowRight, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store'
 import { couplesService } from '@/services'
+import { OnboardingProgress } from '@/components/shared/OnboardingProgress'
 
 export const QuickAddButtonsPage = () => {
   const navigate = useNavigate()
@@ -73,11 +74,7 @@ export const QuickAddButtonsPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <div className="mb-4">
-            <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">3</span>
-            </div>
-          </div>
+          <OnboardingProgress currentStep={3} totalSteps={4} />
           <CardTitle className="text-2xl">Customize quick-add buttons</CardTitle>
           <CardDescription>
             Select 4-6 categories for one-tap expense logging

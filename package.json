@@ -1,7 +1,7 @@
 {
   "name": "couple-bucks",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "A mobile-first PWA for couples to collaboratively manage household finances",
   "scripts": {

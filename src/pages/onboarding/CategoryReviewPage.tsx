@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ArrowRight, Check } from 'lucide-react'
 import { useAuthStore } from '@/store'
 import { couplesService } from '@/services'
+import { OnboardingProgress } from '@/components/shared/OnboardingProgress'
 
 interface CategoryEdit {
   originalName: string
@@ -120,11 +121,7 @@ export const CategoryReviewPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-3xl">
         <CardHeader className="text-center">
-          <div className="mb-4">
-            <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="h-6 w-6 text-white" />
-            </div>
-          </div>
+          <OnboardingProgress currentStep={4} totalSteps={4} />
           <CardTitle className="text-2xl">Review spending categories</CardTitle>
           <CardDescription>
             Your partner set up these categories. Modify if needed.

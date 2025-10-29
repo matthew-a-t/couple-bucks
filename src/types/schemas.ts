@@ -34,7 +34,36 @@ export const onboardingSurveySchema = z.object({
   splitMethod: z.enum(['fifty_fifty', 'proportional', 'custom', 'single_payer'], {
     required_error: 'Please select how you split expenses'
   }),
-  trackIncome: z.boolean().default(false)
+  trackIncome: z.boolean().default(false),
+  user1Income: z.string().optional(),
+  user1IncomeFrequency: z.enum(['weekly', 'biweekly', 'monthly']).optional(),
+  user2Income: z.string().optional(),
+  user2IncomeFrequency: z.enum(['weekly', 'biweekly', 'monthly']).optional()
+}).refine((data) => {
+  // If trackIncome is true, at least one user's income must be provided
+  if (data.trackIncome) {
+    const hasUser1Income = (
+      data.user1Income !== undefined &&
+      data.user1Income.length > 0 &&
+      !isNaN(Number(data.user1Income)) &&
+      Number(data.user1Income) >= 0 &&
+      data.user1IncomeFrequency !== undefined
+    )
+
+    const hasUser2Income = (
+      data.user2Income !== undefined &&
+      data.user2Income.length > 0 &&
+      !isNaN(Number(data.user2Income)) &&
+      Number(data.user2Income) >= 0 &&
+      data.user2IncomeFrequency !== undefined
+    )
+
+    return hasUser1Income || hasUser2Income
+  }
+  return true
+}, {
+  message: 'Please enter your income',
+  path: ['user1Income']
 })
 
 export const permissionTierSchema = z.object({

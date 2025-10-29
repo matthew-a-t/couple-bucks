@@ -4,12 +4,14 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { permissionTierSchema, type PermissionTierData } from '@/types/schemas'
 import { useAuthStore } from '@/store'
+import { couplesService } from '@/services'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ArrowRight, UserCheck, Users } from 'lucide-react'
+import { OnboardingProgress } from '@/components/shared/OnboardingProgress'
 
 export const PermissionTierPage = () => {
   const navigate = useNavigate()
@@ -33,16 +35,25 @@ export const PermissionTierPage = () => {
       // Update user's permission tier
       await updateProfile({ permission_tier: data.permissionTier })
 
-      console.log('[PermissionTier] Success, navigating to categories')
+      console.log('[PermissionTier] Success')
 
       // Determine if user is User 2 (joined via invite code)
       const isUser2 = session?.couple?.user2_id === session?.user?.id
 
-      // Navigate to appropriate page
-      // User 2 goes to review page, User 1 goes to regular categories page
       if (isUser2) {
-        navigate('/onboarding/categories-review')
+        // User 2: Skip category editing (User 1 already set categories)
+        // Approve survey and complete onboarding
+        if (session?.couple?.id) {
+          await couplesService.approveSurvey(session.couple.id)
+          await updateProfile({ onboarding_completed: true })
+          await useAuthStore.getState().refreshSession()
+        }
+
+        console.log('[PermissionTier] User 2 onboarding complete, navigating to dashboard')
+        navigate('/dashboard')
       } else {
+        // User 1: Continue to category editing
+        console.log('[PermissionTier] User 1, navigating to categories')
         navigate('/onboarding/categories')
       }
     } catch (err: any) {
@@ -55,11 +66,7 @@ export const PermissionTierPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <div className="mb-4">
-            <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">2</span>
-            </div>
-          </div>
+          <OnboardingProgress currentStep={2} totalSteps={4} />
           <CardTitle className="text-2xl">Choose your involvement level</CardTitle>
           <CardDescription>
             This determines what features you'll see. You can change this later.

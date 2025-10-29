@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { budgetFormSchema, type BudgetFormData } from '@/types/schemas'
 import { useAuthStore } from '@/store'
 import { budgetsService, couplesService } from '@/services'
+import { MAX_CATEGORIES } from '@/types'
 import {
   Dialog,
   DialogContent
@@ -32,6 +33,8 @@ export const AddBudgetDialog = ({
 
   const [categoryInput, setCategoryInput] = useState('')
   const [selectedEmoji, setSelectedEmoji] = useState('📦')
+
+  const currentCategoryCount = session?.couple?.custom_categories?.length || 0
 
   const commonEmojis = ['💰', '🍔', '🚗', '⚡', '🎮', '🛒', '🏥', '🏠', '🐾', '📦', '✈️', '👕', '📚', '🎬', '☕']
 
@@ -107,7 +110,12 @@ export const AddBudgetDialog = ({
 
           {/* Category */}
           <div className="space-y-3">
-            <Label htmlFor="category" className="text-base font-semibold">Category Name *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="category" className="text-base font-semibold">Category Name *</Label>
+              <span className="text-sm text-muted-foreground">
+                {currentCategoryCount}/{MAX_CATEGORIES} categories
+              </span>
+            </div>
             <Input
               id="category"
               placeholder="Type a category name..."

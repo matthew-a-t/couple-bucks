@@ -9,6 +9,7 @@ import { ArrowRight, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store'
 import { couplesService } from '@/services'
+import { OnboardingProgress } from '@/components/shared/OnboardingProgress'
 
 export const QuickAddReviewPage = () => {
   const navigate = useNavigate()
@@ -107,11 +108,7 @@ export const QuickAddReviewPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <div className="mb-4">
-            <div className="w-12 h-12 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="h-6 w-6 text-white" />
-            </div>
-          </div>
+          <OnboardingProgress currentStep={3} totalSteps={4} />
           <CardTitle className="text-2xl">Review quick-add buttons</CardTitle>
           <CardDescription>
             Your partner selected these categories. Modify if needed.
