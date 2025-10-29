@@ -82,8 +82,7 @@ export const AddExpenseDialog = ({
           const split = await incomeService.calculateProportionalSplit(session.profile.couple_id)
 
           // Determine which percentage belongs to current user
-          const coupleData = await incomeService.getCoupleIncomes(session.profile.couple_id)
-          const isUser1 = coupleData.couple.user1_id === session.user?.id
+          const isUser1 = session.couple.user1_id === session.user?.id
 
           setProportionalSplit({
             user1: isUser1 ? split.user1Percentage : split.user2Percentage,

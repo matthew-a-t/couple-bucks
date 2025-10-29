@@ -108,7 +108,7 @@ export const BillsPage = () => {
     setSelectedDate(null)
   }
 
-  const handleDayClick = (date: Date, dayBills: BillWithStatus[]) => {
+  const handleDayClick = (date: Date) => {
     setSelectedDate(date)
     // Scroll to bills list
     setTimeout(() => {
@@ -140,7 +140,7 @@ export const BillsPage = () => {
       <main className="px-4 pt-6 space-y-6 max-w-[90rem] mx-auto">
         {/* Invite Partner Banner */}
         {session?.couple && !session.couple.is_paired && (
-          <InvitePartnerBanner inviteCode={session.couple.invite_code || undefined} />
+          <InvitePartnerBanner />
         )}
 
         {/* Month Navigator */}

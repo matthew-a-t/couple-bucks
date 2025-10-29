@@ -77,9 +77,10 @@ export interface BillWithStatus {
   couple_id: string
   name: string
   amount: number
-  category: string
+  category: string | null
   due_date: string
   frequency: string
+  custom_frequency_days: number | null
   split_type: string
   split_percentage_user1: number
   split_percentage_user2: number
@@ -179,7 +180,6 @@ export interface BudgetFormData {
 export interface BillFormData {
   name: string
   amount: string
-  category: string
   due_date: string
   frequency: 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'custom'
   custom_frequency_days?: number
@@ -187,7 +187,6 @@ export interface BillFormData {
   split_percentage_user1?: number
   split_percentage_user2?: number
   reminder_days: number
-  receipt?: File | null
 }
 
 // Budget status calculation helper

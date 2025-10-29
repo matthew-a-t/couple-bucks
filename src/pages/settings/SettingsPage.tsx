@@ -95,12 +95,14 @@ export const SettingsPage = () => {
         if (coupleData) {
           const partnerId = coupleData.user1_id === session.user.id ? coupleData.user2_id : coupleData.user1_id
 
-          // Load partner's incomes
-          const partnerIncomesData = await incomeService.getIncomeForProfile(partnerId)
-          setPartnerIncomes(partnerIncomesData)
+          // Load partner's incomes (only if partner exists)
+          if (partnerId) {
+            const partnerIncomesData = await incomeService.getIncomeForProfile(partnerId)
+            setPartnerIncomes(partnerIncomesData)
+          }
 
           // Calculate proportional split ratio
-          const split = await incomeService.calculateProportionalSplit(session.profile.couple_id)
+          const split = await incomeService.calculateProportionalSplit(session.profile.couple_id!)
           const myPercentage = coupleData.user1_id === session.user.id ? split.user1Percentage : split.user2Percentage
           const partnerPercentage = coupleData.user1_id === session.user.id ? split.user2Percentage : split.user1Percentage
           setSplitRatio({ myPercentage, partnerPercentage })

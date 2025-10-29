@@ -114,7 +114,7 @@ export interface Bill {
   // Bill details
   name: string
   amount: number
-  category: string
+  category: string | null
 
   // Recurrence
   due_date: string
@@ -205,7 +205,10 @@ export type ProfileInsert = Omit<Profile, 'id' | 'created_at' | 'updated_at'>
 export type CoupleInsert = Omit<Couple, 'id' | 'created_at' | 'updated_at'>
 export type ExpenseInsert = Omit<Expense, 'id' | 'created_at' | 'updated_at'>
 export type BudgetInsert = Omit<Budget, 'id' | 'created_at' | 'updated_at'>
-export type BillInsert = Omit<Bill, 'id' | 'created_at' | 'updated_at'>
+export type BillInsert = Omit<Bill, 'id' | 'created_at' | 'updated_at' | 'category' | 'receipt_url'> & {
+  category?: string | null
+  receipt_url?: string | null
+}
 export type IncomeInsert = Omit<Income, 'id' | 'created_at' | 'updated_at'>
 export type BudgetHistoryInsert = Omit<BudgetHistory, 'id' | 'created_at'>
 export type BillPaymentHistoryInsert = Omit<BillPaymentHistory, 'id' | 'created_at'>

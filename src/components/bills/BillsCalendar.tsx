@@ -11,7 +11,6 @@ import {
   eachDayOfInterval,
   format,
   isSameMonth,
-  isSameDay,
   isToday
 } from 'date-fns'
 

@@ -266,9 +266,6 @@ export const billsService = {
     const periodStart = new Date(year, month - 1, 1)
     const periodEnd = new Date(year, month, 0) // Last day of month
 
-    const periodStartStr = periodStart.toISOString().split('T')[0]
-    const periodEndStr = periodEnd.toISOString().split('T')[0]
-
     // Get all active bills for the couple
     const bills = await this.getCoupleBills(coupleId, false)
 
@@ -420,12 +417,14 @@ export const billsService = {
       byFrequency[bill.frequency].count++
       byFrequency[bill.frequency].total += amount
 
-      // Track by category
-      if (!byCategory[bill.category]) {
-        byCategory[bill.category] = { count: 0, total: 0 }
+      // Track by category (skip if null)
+      if (bill.category) {
+        if (!byCategory[bill.category]) {
+          byCategory[bill.category] = { count: 0, total: 0 }
+        }
+        byCategory[bill.category].count++
+        byCategory[bill.category].total += amount
       }
-      byCategory[bill.category].count++
-      byCategory[bill.category].total += amount
     })
 
     return {

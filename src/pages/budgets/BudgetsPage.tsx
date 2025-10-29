@@ -15,8 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton'
 import { Plus, PiggyBank, TrendingUp, Search, Calendar } from 'lucide-react'
 import { DEFAULT_CATEGORIES, MAX_CATEGORIES } from '@/types'
-import type { BudgetWithProgress } from '@/types'
-import type { Expense } from '@/types/database'
+import type { BudgetWithProgress, ExpenseWithUser } from '@/types'
 
 export const BudgetsPage = () => {
   const location = useLocation()
@@ -24,12 +23,10 @@ export const BudgetsPage = () => {
   const session = useAuthStore((state) => state.session)
   const {
     budgets,
-    budgetsLoading,
     loadBudgets,
     subscribeToBudgets,
     unsubscribeFromBudgets,
     expenses,
-    expensesLoading,
     loadExpenses,
     subscribeToExpenses,
     unsubscribeFromExpenses
@@ -40,7 +37,7 @@ export const BudgetsPage = () => {
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth())
   const [selectedYear, setSelectedYear] = useState(now.getFullYear())
   const [monthBudgets, setMonthBudgets] = useState<BudgetWithProgress[]>([])
-  const [monthExpenses, setMonthExpenses] = useState<Expense[]>([])
+  const [monthExpenses, setMonthExpenses] = useState<ExpenseWithUser[]>([])
   const [monthDataLoading, setMonthDataLoading] = useState(false)
 
   const [addDialogOpen, setAddDialogOpen] = useState(false)

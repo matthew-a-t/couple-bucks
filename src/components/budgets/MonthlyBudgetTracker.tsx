@@ -86,7 +86,7 @@ export const MonthlyBudgetTracker = ({ coupleId, budgets }: MonthlyBudgetTracker
     })
 
     // Convert grouped history to monthly data
-    historyByMonth.forEach((records, monthKey) => {
+    historyByMonth.forEach((records) => {
       const totalBudgeted = records.reduce((sum, r) => sum + r.limit_amount, 0)
       const totalSpent = records.reduce((sum, r) => sum + r.total_spent, 0)
       const percentage = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0

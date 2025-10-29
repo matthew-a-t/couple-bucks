@@ -19,7 +19,9 @@ export const BillCard = ({ bill, onBillUpdated, onBillDeleted }: BillCardProps) 
   const session = useAuthStore((state) => state.session)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
 
-  const getCategoryEmoji = (categoryName: string) => {
+  const getCategoryEmoji = (categoryName: string | null) => {
+    if (!categoryName) return '📄' // Default emoji for bills without category
+
     // Check if user has selected a custom emoji for this category
     const customEmojiMap = session?.couple?.custom_category_emojis || {}
     if (customEmojiMap[categoryName]) {
