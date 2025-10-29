@@ -436,89 +436,6 @@ export const SettingsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Couple Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Couple Account</CardTitle>
-            <CardDescription>Your couple pairing information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {session?.couple ? (
-              <>
-                <div className="space-y-2">
-                  <Label>Partner</Label>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{partner?.full_name || 'Partner'}</p>
-                      <p className="text-sm text-muted-foreground">{partner?.email}</p>
-                    </div>
-                    <Badge variant="secondary" className="capitalize">
-                      {partner?.permission_tier}
-                    </Badge>
-                  </div>
-                </div>
-
-                {inviteCode && (
-                  <div className="space-y-2">
-                    <Label>Invite Code</Label>
-                    <div className="flex gap-2">
-                      <Input value={inviteCode} readOnly className="font-mono bg-muted" />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleCopyInviteCode}
-                      >
-                        {inviteCodeCopied ? (
-                          <Check className="h-4 w-4 text-success" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Share this code with someone if you want to change partners (they must join first)
-                    </p>
-                  </div>
-                )}
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowResetDialog(true)}
-                      className="w-full border-warning text-warning hover:bg-warning/10"
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Reset Account Data
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Clear all expenses, budgets, and bills. You'll stay paired with your partner and can start fresh.
-                    </p>
-                  </div>
-
-                  <div>
-                    <Button
-                      variant="destructive"
-                      onClick={() => setShowLeaveDialog(true)}
-                      className="w-full"
-                    >
-                      <UserX className="mr-2 h-4 w-4" />
-                      Leave Couple Account
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      This will unpair you from your partner. Your data will remain but you'll need to create or join a new couple.
-                    </p>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">Not paired with a partner yet</p>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Income Management */}
         {session?.couple?.track_income && (
           <Card>
@@ -757,6 +674,89 @@ export const SettingsPage = () => {
           </CardContent>
         </Card>
 
+        {/* Couple Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Couple Account</CardTitle>
+            <CardDescription>Your couple pairing information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {session?.couple ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Partner</Label>
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{partner?.full_name || 'Partner'}</p>
+                      <p className="text-sm text-muted-foreground">{partner?.email}</p>
+                    </div>
+                    <Badge variant="secondary" className="capitalize">
+                      {partner?.permission_tier}
+                    </Badge>
+                  </div>
+                </div>
+
+                {inviteCode && (
+                  <div className="space-y-2">
+                    <Label>Invite Code</Label>
+                    <div className="flex gap-2">
+                      <Input value={inviteCode} readOnly className="font-mono bg-muted" />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCopyInviteCode}
+                      >
+                        {inviteCodeCopied ? (
+                          <Check className="h-4 w-4 text-success" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Share this code with someone if you want to change partners (they must join first)
+                    </p>
+                  </div>
+                )}
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowResetDialog(true)}
+                      className="w-full border-warning text-warning hover:bg-warning/10"
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Reset Account Data
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Clear all expenses, budgets, and bills. You'll stay paired with your partner and can start fresh.
+                    </p>
+                  </div>
+
+                  <div>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setShowLeaveDialog(true)}
+                      className="w-full"
+                    >
+                      <UserX className="mr-2 h-4 w-4" />
+                      Leave Couple Account
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      This will unpair you from your partner. Your data will remain but you'll need to create or join a new couple.
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Not paired with a partner yet</p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Account Actions */}
         <Card>
           <CardHeader>
@@ -774,7 +774,7 @@ export const SettingsPage = () => {
             </Button>
 
             <p className="text-xs text-muted-foreground text-center">
-              Couple Bucks v0.3.0 • Made with ❤️ for couples
+              Couple Bucks v0.4.0 • Made with ❤️ for couples
             </p>
           </CardContent>
         </Card>

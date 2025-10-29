@@ -2,21 +2,12 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import type { BillWithStatus } from '@/types'
 import { DEFAULT_CATEGORIES } from '@/types'
-import { billsService, expensesService } from '@/services'
 import { useAuthStore } from '@/store'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { useToast } from '@/hooks/use-toast'
-import { MoreVertical, CheckCircle2, Trash2, Calendar } from 'lucide-react'
+import { Calendar, Receipt } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { BillDetailDialog } from './BillDetailDialog'
 
 interface BillCardProps {
   bill: BillWithStatus
@@ -26,9 +17,7 @@ interface BillCardProps {
 
 export const BillCard = ({ bill, onBillUpdated, onBillDeleted }: BillCardProps) => {
   const session = useAuthStore((state) => state.session)
-  const isManager = session?.profile?.permission_tier === 'manager'
-  const { toast } = useToast()
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
 
   const getCategoryEmoji = (categoryName: string) => {
     // Check if user has selected a custom emoji for this category
@@ -72,108 +61,69 @@ export const BillCard = ({ bill, onBillUpdated, onBillDeleted }: BillCardProps) 
     return `Due in ${days} day${days !== 1 ? 's' : ''}`
   }
 
-  const handleMarkAsPaid = async () => {
-    try {
-      setIsProcessing(true)
-      await billsService.markBillAsPaid(bill.id)
-
-      // Optionally create expense
-      if (session?.couple?.id && session.user.id) {
-        await expensesService.createExpenseWithSplit(
-          session.couple.id,
-          session.user.id,
-          Number(bill.amount),
-          bill.category,
-          bill.split_type as any,
-          `Bill payment: ${bill.name}`
-        )
-      }
-
-      toast({
-        title: 'Bill marked as paid',
-        description: `${bill.name} payment logged`
-      })
-
-      onBillUpdated?.()
-    } catch (err: any) {
-      toast({
-        title: 'Failed to mark as paid',
-        description: err.message,
-        variant: 'destructive'
-      })
-    } finally {
-      setIsProcessing(false)
-    }
+  const handleBillUpdated = () => {
+    setDetailDialogOpen(false)
+    onBillUpdated?.()
   }
 
-  const handleDelete = async () => {
-    try {
-      setIsProcessing(true)
-      await billsService.deleteBill(bill.id)
-      toast({ title: 'Bill deleted' })
-      onBillDeleted?.()
-    } catch (err: any) {
-      toast({
-        title: 'Failed to delete',
-        description: err.message,
-        variant: 'destructive'
-      })
-    } finally {
-      setIsProcessing(false)
-    }
+  const handleBillDeleted = () => {
+    setDetailDialogOpen(false)
+    onBillDeleted?.()
   }
 
   return (
-    <Card className={cn(bill.status === 'overdue' && 'border-destructive/50')}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-4">
-          <div className="text-3xl">{getCategoryEmoji(bill.category)}</div>
+    <>
+      <Card
+        className={cn(
+          'cursor-pointer hover:shadow-md transition-shadow',
+          bill.status === 'overdue' && 'border-destructive/50'
+        )}
+        onClick={() => setDetailDialogOpen(true)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start gap-4">
+            <div className="text-3xl">{getCategoryEmoji(bill.category)}</div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div>
-                <h3 className="font-semibold truncate">{bill.name}</h3>
-                <p className="text-sm text-muted-foreground">{bill.category}</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold truncate">{bill.name}</h3>
+                    {bill.receipt_url && (
+                      <Receipt className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{bill.category}</p>
+                </div>
               </div>
-              {isManager && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled={isProcessing}>
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleMarkAsPaid}>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Mark as Paid
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-bold text-lg">${Number(bill.amount).toFixed(2)}</span>
-              {getStatusBadge()}
-              <Badge variant="outline" className="text-xs">
-                {bill.frequency}
-              </Badge>
-            </div>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="font-bold text-lg">${Number(bill.amount).toFixed(2)}</span>
+                {getStatusBadge()}
+                <Badge variant="outline" className="text-xs">
+                  {bill.frequency}
+                </Badge>
+              </div>
 
-            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              <span>{format(new Date(bill.due_date), 'MMM d, yyyy')}</span>
-              <span>•</span>
-              <span>{getDaysText()}</span>
+              <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                <span>{format(new Date(bill.due_date), 'MMM d, yyyy')}</span>
+                <span>•</span>
+                <span>{getDaysText()}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Bill Detail Dialog */}
+      <BillDetailDialog
+        bill={bill}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        onBillUpdated={handleBillUpdated}
+        onBillDeleted={handleBillDeleted}
+      />
+    </>
   )
 }

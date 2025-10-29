@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface MonthNavigatorProps {
   selectedMonth: number // 0-11 (JavaScript month)
@@ -18,6 +21,15 @@ export const MonthNavigator = ({ selectedMonth, selectedYear, onMonthChange }: M
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()
   const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear
+
+  // Month picker dialog state
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [tempMonth, setTempMonth] = useState(selectedMonth)
+  const [tempYear, setTempYear] = useState(selectedYear)
+
+  // Generate years list (from 2020 to current year)
+  const startYear = 2020
+  const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => startYear + i).reverse()
 
   const handlePrevious = () => {
     if (selectedMonth === 0) {
@@ -44,6 +56,21 @@ export const MonthNavigator = ({ selectedMonth, selectedYear, onMonthChange }: M
     onMonthChange(currentMonth, currentYear)
   }
 
+  const handleOpenPicker = () => {
+    setTempMonth(selectedMonth)
+    setTempYear(selectedYear)
+    setPickerOpen(true)
+  }
+
+  const handleApplyPicker = () => {
+    // Don't allow selecting future months
+    if (tempYear > currentYear || (tempYear === currentYear && tempMonth > currentMonth)) {
+      return
+    }
+    onMonthChange(tempMonth, tempYear)
+    setPickerOpen(false)
+  }
+
   const canGoNext = !(selectedYear === currentYear && selectedMonth === currentMonth)
 
   return (
@@ -63,12 +90,15 @@ export const MonthNavigator = ({ selectedMonth, selectedYear, onMonthChange }: M
 
           {/* Month/Year Display */}
           <div className="flex-1 text-center">
-            <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={handleOpenPicker}
+              className="flex items-center justify-center gap-2 mx-auto hover:bg-white/10 rounded-lg px-3 py-1 transition-colors"
+            >
               <Calendar className="h-5 w-5" />
               <h2 className="text-xl font-semibold">
                 {MONTH_NAMES[selectedMonth]} {selectedYear}
               </h2>
-            </div>
+            </button>
             {!isCurrentMonth && (
               <Button
                 variant="ghost"
@@ -103,6 +133,83 @@ export const MonthNavigator = ({ selectedMonth, selectedYear, onMonthChange }: M
           </div>
         )}
       </div>
+
+      {/* Month/Year Picker Dialog */}
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Select Month & Year</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Month Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Month</label>
+              <Select
+                value={tempMonth.toString()}
+                onValueChange={(value) => setTempMonth(parseInt(value))}
+              >
+                <SelectTrigger className="h-12 text-base rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTH_NAMES.map((month, index) => (
+                    <SelectItem key={index} value={index.toString()} className="text-base py-3">
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Year Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Year</label>
+              <Select
+                value={tempYear.toString()}
+                onValueChange={(value) => setTempYear(parseInt(value))}
+              >
+                <SelectTrigger className="h-12 text-base rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()} className="text-base py-3">
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 h-12 text-base font-semibold rounded-xl"
+                onClick={() => setPickerOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="flex-1 h-12 text-base font-semibold rounded-xl"
+                onClick={handleApplyPicker}
+                disabled={tempYear > currentYear || (tempYear === currentYear && tempMonth > currentMonth)}
+              >
+                Apply
+              </Button>
+            </div>
+
+            {/* Future month warning */}
+            {(tempYear > currentYear || (tempYear === currentYear && tempMonth > currentMonth)) && (
+              <p className="text-sm text-destructive text-center">
+                Cannot select future months
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

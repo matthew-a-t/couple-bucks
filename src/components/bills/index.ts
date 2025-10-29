@@ -1,2 +1,6 @@
 export { AddBillDialog } from './AddBillDialog'
+export { EditBillDialog } from './EditBillDialog'
+export { BillDetailDialog } from './BillDetailDialog'
+export { BillsOverviewCard } from './BillsOverviewCard'
 export { BillCard } from './BillCard'
+export { BillsCalendar } from './BillsCalendar'

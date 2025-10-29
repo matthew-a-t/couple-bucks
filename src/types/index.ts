@@ -84,12 +84,31 @@ export interface BillWithStatus {
   split_percentage_user1: number
   split_percentage_user2: number
   reminder_days: number
+  receipt_url: string | null
   is_active: boolean
   last_paid_date: string | null
   days_until_due: number
   status: 'overdue' | 'due_soon' | 'upcoming'
   created_at: string
   updated_at: string
+}
+
+// Bill payment history with user details
+export interface BillPaymentHistoryWithDetails {
+  id: string
+  bill_id: string
+  bill_name: string
+  couple_id: string
+  payment_date: string
+  amount_paid: number
+  payment_method: string | null
+  notes: string | null
+  receipt_url: string | null
+  period_start: string
+  period_end: string
+  recorded_by: string
+  recorded_by_name: string | null
+  created_at: string
 }
 
 // User session state
@@ -168,6 +187,7 @@ export interface BillFormData {
   split_percentage_user1?: number
   split_percentage_user2?: number
   reminder_days: number
+  receipt?: File | null
 }
 
 // Budget status calculation helper

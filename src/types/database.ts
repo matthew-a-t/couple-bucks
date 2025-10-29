@@ -129,6 +129,9 @@ export interface Bill {
   // Reminder settings
   reminder_days: number
 
+  // Receipt
+  receipt_url: string | null
+
   // Status
   is_active: boolean
   last_paid_date: string | null
@@ -173,6 +176,30 @@ export interface BudgetHistory {
   created_at: string
 }
 
+export interface BillPaymentHistory {
+  id: string
+  bill_id: string
+  couple_id: string
+
+  // Payment information
+  payment_date: string // ISO date string (YYYY-MM-DD)
+  amount_paid: number
+  payment_method: string | null
+  notes: string | null
+
+  // Receipt for this payment
+  receipt_url: string | null
+
+  // Period information (which cycle was this payment for)
+  period_start: string // ISO date string (YYYY-MM-DD)
+  period_end: string // ISO date string (YYYY-MM-DD)
+
+  // Who recorded the payment
+  recorded_by: string
+
+  created_at: string
+}
+
 // Insert types (for creating new records)
 export type ProfileInsert = Omit<Profile, 'id' | 'created_at' | 'updated_at'>
 export type CoupleInsert = Omit<Couple, 'id' | 'created_at' | 'updated_at'>
@@ -181,6 +208,7 @@ export type BudgetInsert = Omit<Budget, 'id' | 'created_at' | 'updated_at'>
 export type BillInsert = Omit<Bill, 'id' | 'created_at' | 'updated_at'>
 export type IncomeInsert = Omit<Income, 'id' | 'created_at' | 'updated_at'>
 export type BudgetHistoryInsert = Omit<BudgetHistory, 'id' | 'created_at'>
+export type BillPaymentHistoryInsert = Omit<BillPaymentHistory, 'id' | 'created_at'>
 
 // Update types (for updating records, all fields optional except id)
 export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>
@@ -189,3 +217,4 @@ export type ExpenseUpdate = Partial<Omit<Expense, 'id' | 'created_at' | 'updated
 export type BudgetUpdate = Partial<Omit<Budget, 'id' | 'created_at' | 'updated_at'>>
 export type BillUpdate = Partial<Omit<Bill, 'id' | 'created_at' | 'updated_at'>>
 export type IncomeUpdate = Partial<Omit<Income, 'id' | 'created_at' | 'updated_at'>>
+export type BillPaymentHistoryUpdate = Partial<Omit<BillPaymentHistory, 'id' | 'created_at'>>

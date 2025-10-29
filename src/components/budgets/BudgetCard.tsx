@@ -350,9 +350,11 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted, readOnly 
               </div>
             </div>
 
-            <Button variant="ghost" size="icon" onClick={handleEdit}>
-              <Edit3 className="h-3.5 w-3.5" />
-            </Button>
+            {budget.category !== 'Other' && (
+              <Button variant="ghost" size="icon" onClick={handleEdit}>
+                <Edit3 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         </CardHeader>
 
@@ -560,7 +562,7 @@ export const BudgetCard = ({ budget, onBudgetUpdated, onBudgetDeleted, readOnly 
                   </div>
                 </div>
 
-                {!readOnly && (
+                {!readOnly && budget.category !== 'Other' && (
                   <Button variant="ghost" size="icon" onClick={handleEdit}>
                     <Edit3 className="h-3.5 w-3.5" />
                   </Button>

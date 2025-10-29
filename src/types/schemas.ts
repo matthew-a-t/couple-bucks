@@ -133,7 +133,6 @@ export const billFormSchema = z.object({
     .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
       message: 'Amount must be a positive number'
     }),
-  category: z.string().min(1, 'Please select a category'),
   due_date: z.string().min(1, 'Due date is required'),
   frequency: z.enum(['weekly', 'monthly', 'quarterly', 'annual', 'custom']),
   custom_frequency_days: z.number().min(1).optional(),
